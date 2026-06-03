@@ -1,0 +1,6 @@
+packages/shared
+migrations
+infra
+SETUP_GUIDE.md
+README.md
+pnpm-workspace.yaml
