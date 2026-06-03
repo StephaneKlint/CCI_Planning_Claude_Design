@@ -35,3 +35,17 @@ coverage/
 
 # Vercel
 .vercel/
+
+# Next.js
+.next/
+out/
+build/
+
+# Dependencies
+node_modules/
+.pnpm
+npm-debug.log
+
+# IDEs
+.vscode/
+.idea/
