@@ -1,6 +1,5 @@
 /**
  * /p/[planningId] — Vue Gantt principale (Server Component).
- * Fetches data from Neon, passes to Gantt client component.
  */
 import { notFound } from "next/navigation";
 import { getGanttData } from "@/lib/db/queries";
@@ -19,6 +18,7 @@ export default async function PlanningPage({ params }: Props) {
 
   return (
     <GanttView
+      initialData={data}
       planningId={planningId}
       domains={data.domains}
       lots={data.lots}

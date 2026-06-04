@@ -15,6 +15,7 @@ interface ToolbarProps {
   onTogglePanel?: () => void;
   onVisibilityClick?: () => void;
   onColorModeClick?: () => void;
+  onSearchClick?: () => void;
   colorModeLabel?: string;
 }
 

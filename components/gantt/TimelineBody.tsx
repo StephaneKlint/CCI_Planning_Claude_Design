@@ -10,6 +10,7 @@ import { PhasePill } from "./PhasePill";
 import { MilestoneFlag } from "./MilestoneFlag";
 import { TodayLine } from "./TodayLine";
 import { computeMilestoneLayout } from "@/lib/domain";
+import { useGanttStore } from "@/store/ganttStore";
 import {
   xOf, PILL_H, buildWeekendBands,
 } from "./ganttUtils";
@@ -54,6 +55,7 @@ export function TimelineBody({
   showDomainBands,
   viewEnd,
 }: TimelineBodyProps) {
+  const { togglePhaseSelection, selectedPhaseIds } = useGanttStore();
   const domainById = Object.fromEntries(domains.map((d) => [d.id, d]));
   const lotById = Object.fromEntries(lots.map((l) => [l.id, l]));
   const statusByCode = Object.fromEntries(statuses.map((s) => [s.code, s]));
@@ -194,6 +196,10 @@ export function TimelineBody({
             if (s) { bg = s.bg; fg = s.color; }
           }
 
+          const isSelected = selectedPhaseIds.has(phase.id);
+          // Dim non-selected when a selection is active
+          const dimmed = selectedPhaseIds.size > 0 && !isSelected;
+
           return (
             <PhasePill
               key={phase.id}
@@ -206,6 +212,9 @@ export function TimelineBody({
               bg={bg}
               fg={fg}
               hasNote={!!phase.note}
+              selected={isSelected}
+              dimmed={dimmed}
+              onClick={(e) => togglePhaseSelection(phase.id, e.metaKey || e.ctrlKey)}
             />
           );
         });
@@ -238,7 +247,7 @@ export function TimelineBody({
         });
 
         return (
-          <div key={`lot-${row.id}`} style={{ position: "absolute", top: 0, left: 0, width: totalW, height: totalH, pointerEvents: "none" }}>
+          <div key={`lot-${row.id}`} style={{ position: "absolute", top: 0, left: 0, width: totalW, height: totalH }}>
             {pills}
             {flags}
           </div>

@@ -5,7 +5,15 @@ export type Density = "normal" | "compact" | "comfy";
 export type ColorMode = "domain" | "status" | "person";
 export type PanelMode = "compact" | "floating" | "hidden";
 
+export type EditTarget =
+  | { kind: "phase"; id: string }
+  | { kind: "lot"; id: string }
+  | { kind: "milestone"; id: string }
+  | { kind: "create"; lotId?: string }
+  | null;
+
 interface GanttState {
+  // Display
   zoom: ZoomLevel;
   density: Density;
   colorMode: ColorMode;
@@ -13,6 +21,15 @@ interface GanttState {
   showWeekends: boolean;
   showDomainBands: boolean;
   showResponsables: boolean;
+  // Edit panel
+  editTarget: EditTarget;
+  // Bulk selection
+  selectedPhaseIds: Set<string>;
+  // Visibility overrides (lotId → hidden)
+  hiddenLotIds: Set<string>;
+  // Command palette
+  commandPaletteOpen: boolean;
+  // Actions
   setZoom: (z: ZoomLevel) => void;
   setDensity: (d: Density) => void;
   setColorMode: (m: ColorMode) => void;
@@ -20,6 +37,12 @@ interface GanttState {
   toggleWeekends: () => void;
   toggleDomainBands: () => void;
   toggleResponsables: () => void;
+  openEdit: (target: EditTarget) => void;
+  closeEdit: () => void;
+  togglePhaseSelection: (phaseId: string, multi: boolean) => void;
+  clearSelection: () => void;
+  toggleLotVisibility: (lotId: string) => void;
+  setCommandPaletteOpen: (open: boolean) => void;
 }
 
 export const useGanttStore = create<GanttState>((set) => ({
@@ -30,6 +53,11 @@ export const useGanttStore = create<GanttState>((set) => ({
   showWeekends: true,
   showDomainBands: true,
   showResponsables: true,
+  editTarget: null,
+  selectedPhaseIds: new Set(),
+  hiddenLotIds: new Set(),
+  commandPaletteOpen: false,
+
   setZoom: (zoom) => set({ zoom }),
   setDensity: (density) => set({ density }),
   setColorMode: (colorMode) => set({ colorMode }),
@@ -37,4 +65,32 @@ export const useGanttStore = create<GanttState>((set) => ({
   toggleWeekends: () => set((s) => ({ showWeekends: !s.showWeekends })),
   toggleDomainBands: () => set((s) => ({ showDomainBands: !s.showDomainBands })),
   toggleResponsables: () => set((s) => ({ showResponsables: !s.showResponsables })),
+
+  openEdit: (editTarget) => set({ editTarget, selectedPhaseIds: new Set() }),
+  closeEdit: () => set({ editTarget: null }),
+
+  togglePhaseSelection: (phaseId, multi) =>
+    set((s) => {
+      if (!multi) {
+        // Single click without modifier → open edit panel
+        return { selectedPhaseIds: new Set(), editTarget: { kind: "phase", id: phaseId } };
+      }
+      // ⌘/Ctrl+click → toggle selection
+      const next = new Set(s.selectedPhaseIds);
+      if (next.has(phaseId)) next.delete(phaseId);
+      else next.add(phaseId);
+      return { selectedPhaseIds: next, editTarget: null };
+    }),
+
+  clearSelection: () => set({ selectedPhaseIds: new Set(), editTarget: null }),
+
+  toggleLotVisibility: (lotId) =>
+    set((s) => {
+      const next = new Set(s.hiddenLotIds);
+      if (next.has(lotId)) next.delete(lotId);
+      else next.add(lotId);
+      return { hiddenLotIds: next };
+    }),
+
+  setCommandPaletteOpen: (commandPaletteOpen) => set({ commandPaletteOpen }),
 }));

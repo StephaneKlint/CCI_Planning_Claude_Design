@@ -1,0 +1,254 @@
+"use server";
+/**
+ * lib/actions/planning.ts
+ * Server Actions for planning mutations.
+ * Jalon 4: CRUD phases, lots, milestones.
+ * Jalon 5: assertCanEdit will enforce permissions with real auth.
+ */
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { db } from "@/lib/db";
+import { phases, lots, milestones, activityLog } from "@/lib/db/schema";
+import { eq, inArray } from "drizzle-orm";
+import { getGanttData } from "@/lib/db/queries";
+import type { GanttData } from "@/lib/db/queries";
+
+// ---------------------------------------------------------------------------
+// Permission guard (placeholder — real auth in Jalon 5)
+// ---------------------------------------------------------------------------
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function assertCanEdit(_planningId: string): Promise<void> {
+  // TODO Jalon 5: verify user session + planning_member.permission !== 'viewer'
+}
+
+// ---------------------------------------------------------------------------
+// Activity log helper
+// ---------------------------------------------------------------------------
+async function logActivity(
+  planningId: string,
+  verb: string,
+  targetType: string,
+  targetId: string,
+  summary: string,
+  meta?: Record<string, unknown>
+) {
+  await db.insert(activityLog).values({
+    planningId,
+    verb,
+    targetType,
+    targetId,
+    summary,
+    meta: meta ?? null,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Phase mutations
+// ---------------------------------------------------------------------------
+
+const UpdatePhaseStatusSchema = z.object({
+  phaseId: z.string().uuid(),
+  planningId: z.string().uuid(),
+  status: z.enum(["planned", "in_progress", "review", "done", "risk", "late"]).nullable(),
+});
+
+export async function updatePhaseStatus(input: z.infer<typeof UpdatePhaseStatusSchema>) {
+  const data = UpdatePhaseStatusSchema.parse(input);
+  await assertCanEdit(data.planningId);
+
+  const [updated] = await db
+    .update(phases)
+    .set({ status: data.status })
+    .where(eq(phases.id, data.phaseId))
+    .returning({ id: phases.id, status: phases.status });
+
+  await logActivity(data.planningId, "status_changed", "phase", data.phaseId,
+    `Statut mis à jour → ${data.status ?? "auto"}`);
+
+  revalidatePath(`/p/${data.planningId}`);
+  return updated;
+}
+
+const UpdatePhaseProgressSchema = z.object({
+  phaseId: z.string().uuid(),
+  planningId: z.string().uuid(),
+  progress: z.number().int().min(0).max(100),
+});
+
+export async function updatePhaseProgress(input: z.infer<typeof UpdatePhaseProgressSchema>) {
+  const data = UpdatePhaseProgressSchema.parse(input);
+  await assertCanEdit(data.planningId);
+
+  const [updated] = await db
+    .update(phases)
+    .set({ progress: data.progress })
+    .where(eq(phases.id, data.phaseId))
+    .returning({ id: phases.id, progress: phases.progress });
+
+  await logActivity(data.planningId, "progress_updated", "phase", data.phaseId,
+    `Avancement → ${data.progress}%`, { progress: data.progress });
+
+  revalidatePath(`/p/${data.planningId}`);
+  return updated;
+}
+
+const UpdatePhaseDatesSchema = z.object({
+  phaseId: z.string().uuid(),
+  planningId: z.string().uuid(),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+export async function updatePhaseDates(input: z.infer<typeof UpdatePhaseDatesSchema>) {
+  const data = UpdatePhaseDatesSchema.parse(input);
+  await assertCanEdit(data.planningId);
+
+  if (data.startDate > data.endDate) {
+    throw new Error("La date de début doit être avant la date de fin.");
+  }
+
+  const [updated] = await db
+    .update(phases)
+    .set({ startDate: data.startDate, endDate: data.endDate })
+    .where(eq(phases.id, data.phaseId))
+    .returning({ id: phases.id, startDate: phases.startDate, endDate: phases.endDate });
+
+  await logActivity(data.planningId, "moved", "phase", data.phaseId,
+    `Déplacé : ${data.startDate} → ${data.endDate}`);
+
+  revalidatePath(`/p/${data.planningId}`);
+  return updated;
+}
+
+const UpdatePhaseNoteSchema = z.object({
+  phaseId: z.string().uuid(),
+  planningId: z.string().uuid(),
+  note: z.string().max(2000).nullable(),
+});
+
+export async function updatePhaseNote(input: z.infer<typeof UpdatePhaseNoteSchema>) {
+  const data = UpdatePhaseNoteSchema.parse(input);
+  await assertCanEdit(data.planningId);
+
+  const [updated] = await db
+    .update(phases)
+    .set({ note: data.note })
+    .where(eq(phases.id, data.phaseId))
+    .returning({ id: phases.id, note: phases.note });
+
+  revalidatePath(`/p/${data.planningId}`);
+  return updated;
+}
+
+const UpdatePhaseColorSchema = z.object({
+  phaseId: z.string().uuid(),
+  planningId: z.string().uuid(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable(),
+});
+
+export async function updatePhaseColor(input: z.infer<typeof UpdatePhaseColorSchema>) {
+  const data = UpdatePhaseColorSchema.parse(input);
+  await assertCanEdit(data.planningId);
+
+  const [updated] = await db
+    .update(phases)
+    .set({ color: data.color })
+    .where(eq(phases.id, data.phaseId))
+    .returning({ id: phases.id, color: phases.color });
+
+  revalidatePath(`/p/${data.planningId}`);
+  return updated;
+}
+
+// Bulk status update
+const BulkUpdateStatusSchema = z.object({
+  phaseIds: z.array(z.string().uuid()).min(1).max(100),
+  planningId: z.string().uuid(),
+  status: z.enum(["planned", "in_progress", "review", "done", "risk", "late"]),
+});
+
+export async function bulkUpdatePhaseStatus(input: z.infer<typeof BulkUpdateStatusSchema>) {
+  const data = BulkUpdateStatusSchema.parse(input);
+  await assertCanEdit(data.planningId);
+
+  await db
+    .update(phases)
+    .set({ status: data.status })
+    .where(inArray(phases.id, data.phaseIds));
+
+  await logActivity(data.planningId, "bulk_status_changed", "phase", data.phaseIds[0],
+    `${data.phaseIds.length} phases → statut ${data.status}`,
+    { phaseIds: data.phaseIds, status: data.status });
+
+  revalidatePath(`/p/${data.planningId}`);
+}
+
+// ---------------------------------------------------------------------------
+// Lot mutations
+// ---------------------------------------------------------------------------
+
+const UpdateLotSchema = z.object({
+  lotId: z.string().uuid(),
+  planningId: z.string().uuid(),
+  name: z.string().min(1).max(160).optional(),
+  subtitle: z.string().max(500).nullable().optional(),
+  hidden: z.boolean().optional(),
+});
+
+export async function updateLot(input: z.infer<typeof UpdateLotSchema>) {
+  const data = UpdateLotSchema.parse(input);
+  await assertCanEdit(data.planningId);
+
+  const updates: Partial<{ name: string; subtitle: string | null; hidden: boolean }> = {};
+  if (data.name !== undefined) updates.name = data.name;
+  if (data.subtitle !== undefined) updates.subtitle = data.subtitle;
+  if (data.hidden !== undefined) updates.hidden = data.hidden;
+
+  const [updated] = await db
+    .update(lots)
+    .set(updates)
+    .where(eq(lots.id, data.lotId))
+    .returning({ id: lots.id, name: lots.name, subtitle: lots.subtitle, hidden: lots.hidden });
+
+  revalidatePath(`/p/${data.planningId}`);
+  return updated;
+}
+
+// ---------------------------------------------------------------------------
+// Milestone mutations
+// ---------------------------------------------------------------------------
+
+const UpdateMilestoneDatesSchema = z.object({
+  milestoneId: z.string().uuid(),
+  planningId: z.string().uuid(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  label: z.string().min(1).max(200).optional(),
+});
+
+export async function updateMilestone(input: z.infer<typeof UpdateMilestoneDatesSchema>) {
+  const data = UpdateMilestoneDatesSchema.parse(input);
+  await assertCanEdit(data.planningId);
+
+  const updates: Partial<{ date: string; label: string }> = { date: data.date };
+  if (data.label !== undefined) updates.label = data.label;
+
+  const [updated] = await db
+    .update(milestones)
+    .set(updates)
+    .where(eq(milestones.id, data.milestoneId))
+    .returning({ id: milestones.id, date: milestones.date, label: milestones.label });
+
+  await logActivity(data.planningId, "moved", "milestone", data.milestoneId,
+    `Jalon déplacé au ${data.date}`);
+
+  revalidatePath(`/p/${data.planningId}`);
+  return updated;
+}
+
+// ---------------------------------------------------------------------------
+// Data fetch action (callable from client via TanStack Query)
+// Server Action boundary ensures DB code stays server-side.
+// ---------------------------------------------------------------------------
+export async function fetchPlanningData(planningId: string): Promise<GanttData | null> {
+  return getGanttData(planningId);
+}
