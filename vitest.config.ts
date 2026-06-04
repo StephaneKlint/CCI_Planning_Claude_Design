@@ -1,11 +1,12 @@
 import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  plugins: [react()],
   test: {
-    environment: "jsdom",
+    // domain.ts tests are pure Node — no browser APIs needed.
+    // Component tests (Jalon 2+) will use jsdom via per-file env overrides.
+    environment: "node",
     globals: true,
-    setupFiles: ["./vitest.setup.ts"],
+    include: ["__tests__/**/*.test.ts", "**/*.test.ts"],
+    exclude: ["node_modules", ".next"],
   },
 });
