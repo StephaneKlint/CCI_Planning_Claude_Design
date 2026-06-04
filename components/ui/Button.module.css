@@ -1,0 +1,111 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--klint-line, #E6E8EE);
+  background: #ffffff;
+  color: var(--klint-navy, #001036);
+  font-family: var(--font-display, system-ui);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--radius-btn, 12px);
+  cursor: pointer;
+  transition: background var(--duration-fast, 140ms) var(--ease-out, ease),
+              border-color var(--duration-fast, 140ms) var(--ease-out, ease),
+              transform var(--duration-fast, 140ms) var(--ease-out, ease);
+  padding: 6px 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  user-select: none;
+  vertical-align: middle;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--klint-paper, #FAFBFC);
+  border-color: #b0b8c8;
+}
+
+.btn:active:not(:disabled) {
+  transform: var(--hover-lift, translateY(-1px));
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--klint-mint, #5CD696);
+  outline-offset: 2px;
+}
+
+/* Variants */
+.btn--primary {
+  background: var(--klint-navy, #001036);
+  color: #ffffff;
+  border-color: var(--klint-navy, #001036);
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--klint-navy-deep, #001D63);
+  border-color: var(--klint-navy-deep, #001D63);
+}
+
+.btn--mint {
+  background: var(--klint-mint, #5CD696);
+  color: var(--klint-navy, #001036);
+  border-color: var(--klint-mint, #5CD696);
+  font-weight: 600;
+}
+.btn--mint:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: inherit;
+}
+.btn--ghost:hover:not(:disabled) {
+  background: rgba(0, 16, 54, 0.06);
+  border-color: transparent;
+}
+
+.btn--danger {
+  color: var(--color-danger, #E5484D);
+  border-color: currentColor;
+}
+.btn--danger:hover:not(:disabled) {
+  background: #FEE2E2;
+}
+
+/* Sizes */
+.btn--xs { padding: 3px 8px; font-size: 10px; border-radius: 8px; gap: 4px; }
+.btn--sm { padding: 4px 10px; font-size: 11px; border-radius: 10px; }
+.btn--md { padding: 6px 12px; font-size: 12px; }
+
+/* Icon helpers */
+.icon, .iconRight {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Loading spinner */
+.btn--loading {
+  pointer-events: none;
+}
+.btn--loading::after {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-left: 4px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

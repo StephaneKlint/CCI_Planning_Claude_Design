@@ -1,0 +1,171 @@
+/* Rail — 60px fixed left, navy bg */
+.rail {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--rail-w, 60px);
+  background: var(--klint-navy, #001036);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  z-index: 15;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 56px;   /* same as topbar height */
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 8px;
+}
+
+.brandK {
+  font-family: var(--font-display, system-ui);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--klint-mint, #5CD696);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.topNav,
+.bottomNav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 0 8px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.bottomNav {
+  padding-bottom: 12px;
+}
+
+.railBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--duration-fast, 140ms), color var(--duration-fast, 140ms);
+  position: relative;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.railBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.railBtn.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+/* Mint left bar on active */
+.railBtn.active::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 22px;
+  background: var(--klint-mint, #5CD696);
+  border-radius: 0 2px 2px 0;
+}
+
+/* Tooltip */
+.railBtn::after {
+  content: attr(data-label);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 16, 54, 0.92);
+  color: #f3f4f6;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: var(--font-display, system-ui);
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-fast, 140ms);
+  z-index: 20;
+}
+
+.railBtn:hover::after {
+  opacity: 1;
+}
+
+.railBtn:focus-visible {
+  outline: 2px solid var(--klint-mint, #5CD696);
+  outline-offset: 2px;
+}
+
+/* User avatar button */
+.railAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-display, system-ui);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  transition: border-color var(--duration-fast, 140ms);
+  position: relative;
+}
+
+.railAvatar:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.railAvatar::after {
+  content: attr(data-label);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 16, 54, 0.92);
+  color: #f3f4f6;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: var(--font-display, system-ui);
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-fast, 140ms);
+  z-index: 20;
+}
+
+.railAvatar:hover::after {
+  opacity: 1;
+}

@@ -1,17 +1,47 @@
-/*
- * Jalon 2 : porter ici colors_and_type.css + design-tokens.css (verbatim)
- * puis découper app.css en CSS Modules par composant.
- */
+/* Klint Planning — Global styles */
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+/* 1. Brand tokens (colors, typography, shadows, motion) */
+@import "../styles/colors_and_type.css";
+
+/* 2. Planning-specific tokens (domains, milestones, statuses, Gantt geometry) */
+@import "../styles/design-tokens.css";
+
+/* ============================================================
+   App-level layout
+   ============================================================ */
+html {
+  height: 100%;
 }
 
-html,
 body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
+  background: var(--klint-paper, #FAFBFC);
+  color: var(--klint-navy, #001036);
+  min-height: 100%;
+}
+
+/* Authenticated app layout: rail (60px fixed) + content grid */
+.appLayout {
+  display: grid;
+  grid-template-columns: var(--rail-w, 60px) 1fr;
+  grid-template-rows: var(--topbar-h, 56px) var(--toolbar-h, 48px) 1fr;
+  height: 100vh;
+  overflow: hidden;
+  margin-left: var(--rail-w, 60px); /* offset for fixed rail */
+}
+
+/* Smooth scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--klint-line, #E6E8EE) transparent;
+}
+
+*::-webkit-scrollbar { width: 6px; height: 6px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--klint-line, #E6E8EE); border-radius: 3px; }
+*::-webkit-scrollbar-thumb:hover { background: #c4c9d4; }
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--klint-mint, #5CD696);
+  outline-offset: 2px;
 }

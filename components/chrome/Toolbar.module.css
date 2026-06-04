@@ -1,0 +1,109 @@
+.toolbar {
+  grid-column: 2;
+  grid-row: 2;
+  background: #ffffff;
+  border-bottom: 1px solid var(--klint-line, #E6E8EE);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 16px;
+  height: var(--toolbar-h, 48px);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.toolbar::-webkit-scrollbar { display: none; }
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.groupCenter {
+  flex: 0 0 auto;
+  margin: 0 auto;
+}
+
+.groupRight {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background: var(--klint-line, #E6E8EE);
+  margin: 0 8px;
+  flex-shrink: 0;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #4B5563;
+  font-family: var(--font-display, system-ui);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background var(--duration-fast, 140ms), color var(--duration-fast, 140ms), border-color var(--duration-fast, 140ms);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn:hover {
+  background: var(--klint-paper, #FAFBFC);
+  border-color: var(--klint-line, #E6E8EE);
+  color: var(--klint-navy, #001036);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--klint-mint, #5CD696);
+  outline-offset: 2px;
+}
+
+/* Zoom switch */
+.zoomSwitch {
+  display: inline-flex;
+  background: var(--klint-paper, #FAFBFC);
+  border: 1px solid var(--klint-line, #E6E8EE);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 1px;
+}
+
+.zoomBtn {
+  border: none;
+  background: transparent;
+  color: #6B7280;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-display, system-ui);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background var(--duration-fast, 140ms), color var(--duration-fast, 140ms);
+}
+
+.zoomBtn:hover {
+  background: rgba(0, 16, 54, 0.06);
+  color: var(--klint-navy, #001036);
+}
+
+.zoomActive {
+  background: #ffffff;
+  color: var(--klint-navy, #001036);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 16, 54, 0.08);
+}
+
+.zoomBtn:focus-visible {
+  outline: 2px solid var(--klint-mint, #5CD696);
+  outline-offset: 2px;
+}

@@ -1,0 +1,131 @@
+/* ==========================================================================
+   colors_and_type.css — Klint brand tokens & typography
+   Port VERBATIM into styles/ and @import in app/globals.css
+   ========================================================================== */
+
+/* ============================================================
+   GOOGLE FONTS — Raleway (hosted by Next.js font system)
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+
+:root {
+  /* ============================ KLINT BRAND PALETTE ==========================
+     Primary axis: Navy (dark authority) + Mint (vivid accent)
+     Secondary: Yellow (warm accent), Teal (soft accent)
+     Semantic: Danger, warning, success via palette values
+     ========================================================================== */
+  --klint-navy:       #001036;   /* Primary — titles, dark surfaces, rail          */
+  --klint-navy-deep:  #001D63;   /* Navy-blue — gradients, large surfaces          */
+  --klint-mint:       #5CD696;   /* Signature accent — links, success, today-line  */
+  --klint-yellow:     #EEC315;   /* Warm accent — KPIs, callouts                   */
+  --klint-teal:       #A8D0D5;   /* Soft secondary — card backgrounds              */
+  --klint-blue:       #40A7C3;   /* Links, illustrations                           */
+  --klint-paper:      #FAFBFC;   /* Off-white surface (app background)             */
+  --klint-white:      #FFFFFF;
+  --klint-line:       #E6E8EE;   /* Dividers, borders on white                     */
+  --color-danger:     #E5484D;   /* Late / destructive actions                     */
+
+  /* ============================ SEMANTIC SURFACES (LIGHT) =====================
+     These alias into the planning app's --bg / --panel / --text etc.
+     ========================================================================== */
+  --surface-app:      var(--klint-paper);
+  --surface-card:     var(--klint-white);
+  --surface-overlay:  rgba(0, 16, 54, 0.48);  /* modal backdrop                  */
+
+  /* ============================ TYPOGRAPHY =================================== */
+  --font-display:  "Raleway", system-ui, -apple-system, sans-serif;
+  --font-mono:     ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace;
+
+  /* Type scale */
+  --text-9:   9px;
+  --text-10:  10px;
+  --text-11:  11px;   /* caption, labels */
+  --text-12:  12px;   /* base body       */
+  --text-13:  13px;   /* body-md         */
+  --text-14:  14px;   /* body-lg         */
+  --text-15:  15px;   /* title-sm        */
+  --text-18:  18px;   /* title-md        */
+  --text-22:  22px;   /* KPI value       */
+  --text-28:  28px;   /* hero            */
+
+  /* Weight tokens */
+  --weight-normal:    400;
+  --weight-medium:    500;
+  --weight-semibold:  600;
+  --weight-bold:      700;
+  --weight-extrabold: 800;
+
+  /* Letter-spacing */
+  --tracking-eyebrow:  0.18em;   /* uppercase eyebrow labels (AMOA, CEOS…)        */
+  --tracking-tight:   -0.005em;  /* default body                                  */
+  --tracking-normal:   0;
+
+  /* ============================ RADII ======================================== */
+  --radius-btn:   12px;   /* buttons, inputs                */
+  --radius-input:  8px;   /* small inputs / chips           */
+  --radius-card:  18px;   /* cards, panels                  */
+  --radius-hero:  28px;   /* hero blocks, modals            */
+  --radius-pill: 999px;   /* always a true pill (Canva-style) */
+
+  /* ============================ SHADOWS ====================================== */
+  --shadow-xs: 0 1px 2px rgba(0, 16, 54, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 16, 54, 0.08), 0 1px 2px rgba(0, 16, 54, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 16, 54, 0.06), 0 2px 4px rgba(0, 16, 54, 0.04);
+  --shadow-lg: 0 10px 30px rgba(0, 16, 54, 0.08);
+
+  /* ============================ MOTION ======================================= */
+  --ease-out:       cubic-bezier(.2, .8, .2, 1);
+  --duration-fast:  140ms;
+  --duration-base:  220ms;
+  --duration-slow:  420ms;
+
+  /* No spring, no parallax. Hover = translateY(-1px). */
+  --hover-lift: translateY(-1px);
+
+  /* ============================ TONAL RAMP (navy) ============================
+     Used for generating ghost/outline variants programmatically.
+     ========================================================================== */
+  --navy-50:  #EEF1F8;
+  --navy-100: #D5DBF0;
+  --navy-200: #ADBADE;
+  --navy-300: #7B94CC;
+  --navy-400: #4A6DBB;
+  --navy-500: #1D4099;
+  --navy-600: #001D63;  /* = --klint-navy-deep */
+  --navy-700: #001450;
+  --navy-800: #000D3A;
+  --navy-900: #001036;  /* = --klint-navy */
+}
+
+/* ============================ BASE RESET & BODY ============================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-display);
+  font-size: var(--text-12);
+  font-weight: var(--weight-normal);
+  letter-spacing: var(--tracking-tight);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv11", "ss01", "ss03";
+}
+
+/* ============================ UTILITY CLASSES ============================== */
+.eyebrow {
+  font-size: var(--text-11);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--klint-mint);
+}
+
+code, kbd, pre, samp {
+  font-family: var(--font-mono);
+}

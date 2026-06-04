@@ -1,0 +1,100 @@
+/* ==========================================================================
+   Planning Klint — Design Tokens
+   --------------------------------------------------------------------------
+   Port this file VERBATIM into styles/ alongside colors_and_type.css in the
+   Next.js app, and @import both in app/globals.css. These tokens complement
+   the Klint brand tokens (navy/mint/yellow/teal) with the planning-specific
+   palettes (domains, milestones, statuses) and Gantt geometry.
+   ========================================================================== */
+
+:root {
+  /* ============================ DOMAIN PALETTE ============================
+     Each domain has 4 swatches:
+       --d-{key}-bg     pastel background (sidebar tint, weak)
+       --d-{key}-bg-alt one notch deeper (hover row)
+       --d-{key}-strong saturated heading colour
+       --d-{key}-phase  default colour for the domain's phase pills
+     ====================================================================== */
+  --d-mco-bg:     #FCE9EE;  --d-mco-bg-alt:  #F8DAE2;  --d-mco-strong:  #BE185D;  --d-mco-phase:  #E8568A; /* rose */
+  --d-ceos-bg:    #E2EEFF;  --d-ceos-bg-alt: #D2E3FA;  --d-ceos-strong: #1D4ED8;  --d-ceos-phase: #3B82F6; /* bleu */
+  --d-cfpi-bg:    #FCE9D6;  --d-cfpi-bg-alt: #F9DBBC;  --d-cfpi-strong: #C2410C;  --d-cfpi-phase: #F08A3E; /* orange */
+  --d-nse-bg:     #D9F2DE;  --d-nse-bg-alt:  #C5EAD0;  --d-nse-strong:  #15803D;  --d-nse-phase:  #3FB66B; /* vert */
+  --d-easy-bg:    #E7DCFC;  --d-easy-bg-alt: #D8C8FA;  --d-easy-strong: #6D28D9;  --d-easy-phase: #9069E0; /* violet */
+  --d-digi-bg:    #DBE0FB;  --d-digi-bg-alt: #CAD0F8;  --d-digi-strong: #4338CA;  --d-digi-phase: #5D63DC; /* indigo */
+  --d-o2c-bg:     #D6EEFB;  --d-o2c-bg-alt:  #BFE2F8;  --d-o2c-strong:  #0369A1;  --d-o2c-phase:  #3DA4D8; /* cyan */
+  --d-ia-bg:      #E4E5E9;  --d-ia-bg-alt:   #D5D7DC;  --d-ia-strong:   #374151;  --d-ia-phase:   #6B7280; /* gris */
+  --d-einv-bg:    #E3DDD2;  --d-einv-bg-alt: #D3CABC;  --d-einv-strong: #44403C;  --d-einv-phase: #7A6D5A; /* taupe */
+
+  /* ============================ MILESTONE PALETTE ========================== */
+  --ms-mep:       #1E3A8A;  /* bleu profond — Mise en production           */
+  --ms-pmep:      #312E81;  /* indigo profond — Pré-MEP                    */
+  --ms-cab:       #65A30D;  /* vert citron — CAB                           */
+  --ms-livraison: #0D9488;  /* teal — Livraison REC3                       */
+  --ms-custom:    #7C3AED;  /* violet — Jalon personnalisé                 */
+
+  /* ============================ STATUS PALETTE =========================== */
+  --st-planned-c:     #94A3B8;  --st-planned-bg:     #F1F5F9;
+  --st-in_progress-c: #3B82F6;  --st-in_progress-bg: #E0EBFE;
+  --st-review-c:      #EAB308;  --st-review-bg:      #FEF3C7;
+  --st-done-c:        #16A34A;  --st-done-bg:        #DCFCE7;
+  --st-risk-c:        #F59E0B;  --st-risk-bg:        #FEF3C7;
+  --st-late-c:        #DC2626;  --st-late-bg:        #FEE2E2;
+
+  /* ============================ GANTT GEOMETRY ============================= */
+  --gantt-side:        340px;  /* width of the project tree column          */
+  --gantt-row-h:       44px;   /* lot row height (normal density)           */
+  --gantt-row-h-cmp:   36px;   /* lot row height (compact)                  */
+  --gantt-row-h-cmf:   56px;   /* lot row height (comfy)                    */
+  --gantt-domain-h:    36px;   /* domain header row height                  */
+  --gantt-pill-h:      26px;   /* phase pill height (normal)                */
+  --gantt-pill-radius: 999px;  /* always a true rounded pill (Canva-style)  */
+  --gantt-pill-padx:   12px;   /* internal horizontal padding               */
+
+  /* Pixels per day for each zoom level (12m fits annual planning, 1m daily) */
+  --gantt-ppd-1m:  38px;
+  --gantt-ppd-3m:  18px;
+  --gantt-ppd-6m:  9px;
+  --gantt-ppd-12m: 5px;
+
+  /* Print fit factors — used when entering print mode (see app.jsx) */
+  --gantt-print-ppd:    3.4;
+  --gantt-print-row-h:  22px;
+  --gantt-print-side-w: 180px;
+
+  /* ============================ MILESTONE GEOMETRY ========================= */
+  --ms-diamond:    10px;   /* square edge of the rotated diamond            */
+  --ms-label-h:    14px;   /* flag chip height                              */
+  --ms-label-font: 9.5px;  /* flag chip font size                           */
+  --ms-leader-w:   1px;    /* thin connector line                           */
+  --ms-lanes:      3;      /* max stacked lanes per side (above/below)      */
+
+  /* ============================ CHROME / NAV =============================== */
+  --rail-w:        60px;
+  --topbar-h:      56px;
+  --tab-h:         42px;
+  --toolbar-h:     48px;
+
+  /* ============================ FOCUS & STATE ============================== */
+  --selected-ring: 0 0 0 2px var(--klint-white), 0 0 0 4px var(--klint-navy);
+  --hover-lift:    translateY(-1px);
+  --bar-hover-shadow: 0 4px 12px color-mix(in oklab, currentColor 30%, transparent);
+
+  /* ============================ EDIT PANEL ================================= */
+  --edit-panel-w:  420px;
+  --edit-panel-radius: 16px;
+  --edit-panel-offset: 20px; /* gap to viewport edge */
+}
+
+/* ============================ COMPONENT VARIANTS ==========================
+   Pill styles (passed via .style-{kind} on .pill)
+   ========================================================================== */
+.pill-style-solid   { /* default — filled with pill-c, white text */ }
+.pill-style-tint    { /* light tinted background, dark text */ }
+.pill-style-outline { /* white bg + colored border */ }
+
+/* ============================ DENSITY MAP ==================================
+   Apply on .gantt root via class:
+     - .gantt.density-compact → --row-h: 36px
+     - .gantt.density-normal  → 44px (default)
+     - .gantt.density-comfy   → 56px
+   ========================================================================== */

@@ -1,0 +1,14 @@
+/* App layout — content zone (right of the fixed rail) */
+.content {
+  margin-left: var(--rail-w, 60px);
+  display: grid;
+  grid-template-rows: var(--topbar-h, 56px) 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main {
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
