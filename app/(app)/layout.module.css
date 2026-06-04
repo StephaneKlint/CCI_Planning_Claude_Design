@@ -8,7 +8,9 @@
 }
 
 .main {
-  overflow-y: auto;
-  overflow-x: hidden;
+  /* height: 100% works because parent grid row is 1fr with a definite height */
+  overflow: hidden;
   position: relative;
+  /* Pages with internal scrolling (Gantt) use their own overflow management.
+     Pages that need normal scroll can override with overflow-y: auto. */
 }

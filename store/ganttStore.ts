@@ -1,4 +1,3 @@
-"use client";
 import { create } from "zustand";
 
 export type ZoomLevel = "1m" | "3m" | "6m" | "12m";

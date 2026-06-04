@@ -5,6 +5,7 @@ import { QueryProvider } from "@/providers/QueryProvider";
 export const metadata: Metadata = {
   title: "Klint Planning",
   description: "Outil de planning de projets — Klint Consulting",
+  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
