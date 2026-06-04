@@ -1,0 +1,17 @@
+/*
+ * Jalon 2 : porter ici colors_and_type.css + design-tokens.css (verbatim)
+ * puis découper app.css en CSS Modules par composant.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}

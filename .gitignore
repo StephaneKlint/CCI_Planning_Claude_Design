@@ -1,7 +1,6 @@
 # Dependencies
 node_modules/
-.pnpm-debug.log
-pnpm-lock.yaml
+.pnpm
 
 # Build outputs
 .next/
@@ -13,7 +12,6 @@ build/
 .env
 .env.local
 .env.*.local
-.env.production.local
 
 # IDE
 .vscode/
@@ -30,22 +28,8 @@ Thumbs.db
 coverage/
 .nyc_output/
 
-# Database
-.sqlite3
-
 # Vercel
 .vercel/
 
-# Next.js
-.next/
-out/
-build/
-
-# Dependencies
-node_modules/
-.pnpm
-npm-debug.log
-
-# IDEs
-.vscode/
-.idea/
+# Drizzle Studio
+.drizzle/

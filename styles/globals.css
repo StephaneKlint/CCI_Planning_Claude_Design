@@ -1,7 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-}
+/*
+ * Jalon 2 : placer ici colors_and_type.css puis design-tokens.css (verbatim depuis le prototype).
+ * Ce répertoire contiendra aussi les CSS Modules de chaque composant (*.module.css).
+ */
