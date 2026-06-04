@@ -1,6 +1,4 @@
 .toolbar {
-  grid-column: 2;
-  grid-row: 2;
   background: #ffffff;
   border-bottom: 1px solid var(--klint-line, #E6E8EE);
   display: flex;
