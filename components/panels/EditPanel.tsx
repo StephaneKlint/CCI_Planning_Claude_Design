@@ -5,6 +5,7 @@
  */
 import { useTransition, useState } from "react";
 import { useGanttStore } from "@/store/ganttStore";
+import { useQueryClient } from "@tanstack/react-query";
 import { Icon } from "@/components/ui/Icon";
 import { Button } from "@/components/ui/Button";
 import type { StatusCode } from "@/components/ui/StatusPill";
@@ -14,7 +15,7 @@ import {
   updatePhaseDates, updatePhaseColor, updatePhaseLabel,
   updateMilestone, togglePhaseAssignee,
 } from "@/lib/actions/planning";
-import { useOptimisticPhase } from "@/lib/queries/usePlanning";
+import { useOptimisticPhase, planningQueryKey } from "@/lib/queries/usePlanning";
 import styles from "./EditPanel.module.css";
 
 const STATUS_OPTIONS: { value: StatusCode; label: string; color: string; bg: string }[] = [
@@ -46,6 +47,7 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const patchPhase = useOptimisticPhase();
+  const qc = useQueryClient();
 
   if (!editTarget) return null;
 
@@ -224,32 +226,59 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
           {/* Couleur */}
           <div className={styles.fieldRow}>
             <span className={styles.fieldLabel}>Couleur</span>
-            <div className={styles.palette}>
-              {PALETTE.map((col) => (
-                <button
-                  key={col}
-                  className={`${styles.swatch} ${(phase.color ?? domain?.phaseColor) === col ? styles.swatchActive : ""}`}
-                  style={{ background: col }}
-                  aria-label={col}
-                  onClick={() => {
-                    patchPhase(planningId, phase.id, { color: col });
-                    save(() => updatePhaseColor({ phaseId: phase.id, planningId, color: col }));
+            <div>
+              <div className={styles.palette}>
+                {PALETTE.map((col) => (
+                  <button
+                    key={col}
+                    className={`${styles.swatch} ${(phase.color ?? domain?.phaseColor) === col ? styles.swatchActive : ""}`}
+                    style={{ background: col }}
+                    aria-label={col}
+                    onClick={() => {
+                      patchPhase(planningId, phase.id, { color: col });
+                      save(() => updatePhaseColor({ phaseId: phase.id, planningId, color: col }));
+                    }}
+                  />
+                ))}
+                {phase.color && (
+                  <button
+                    className={styles.swatchReset}
+                    title="Couleur du domaine"
+                    onClick={() => {
+                      patchPhase(planningId, phase.id, { color: null });
+                      save(() => updatePhaseColor({ phaseId: phase.id, planningId, color: null }));
+                    }}
+                  >
+                    ↺
+                  </button>
+                )}
+              </div>
+              <div className={styles.colorPickerRow}>
+                <input
+                  type="color"
+                  className={styles.colorInput}
+                  value={phase.color ?? domain?.phaseColor ?? "#6B7280"}
+                  onChange={(e) => {
+                    patchPhase(planningId, phase.id, { color: e.target.value });
+                    save(() => updatePhaseColor({ phaseId: phase.id, planningId, color: e.target.value }));
+                  }}
+                  title="Choisir une couleur"
+                />
+                <input
+                  type="text"
+                  className={styles.hexInput}
+                  value={phase.color ?? domain?.phaseColor ?? "#6B7280"}
+                  placeholder="#000000"
+                  maxLength={7}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
+                      patchPhase(planningId, phase.id, { color: v });
+                      save(() => updatePhaseColor({ phaseId: phase.id, planningId, color: v }));
+                    }
                   }}
                 />
-              ))}
-              {/* Reset to domain color */}
-              {phase.color && (
-                <button
-                  className={styles.swatchReset}
-                  title="Couleur du domaine"
-                  onClick={() => {
-                    patchPhase(planningId, phase.id, { color: null });
-                    save(() => updatePhaseColor({ phaseId: phase.id, planningId, color: null }));
-                  }}
-                >
-                  ↺
-                </button>
-              )}
+              </div>
             </div>
           </div>
 
@@ -394,6 +423,14 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
     const msTypeColor = data.milestoneTypes.find((t) => t.code === ms.type)?.color ?? "#7C3AED";
     const displayColor = ms.color ?? msTypeColor;
 
+    // Optimistic patch for milestones — updates cache immediately, no 10s wait
+    const patchMilestone = (patch: Partial<typeof ms>) => {
+      qc.setQueryData<GanttData>(planningQueryKey(planningId), (old) => {
+        if (!old) return old;
+        return { ...old, milestones: old.milestones.map((m) => m.id === ms.id ? { ...m, ...patch } : m) };
+      });
+    };
+
     const MS_COLORS = [
       "#1E3A8A", "#312E81", "#65A30D", "#0D9488",
       "#7C3AED", "#DC2626", "#EA580C", "#0369A1",
@@ -430,6 +467,7 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
             onBlur={(e) => {
               const val = e.target.value.trim();
               if (val && val !== ms.label) {
+                patchMilestone({ label: val });
                 startTransition(async () => {
                   await updateMilestone({ milestoneId: ms.id, planningId, label: val });
                 });
@@ -488,11 +526,10 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
                     ? { background: displayColor + "22", color: displayColor, fontWeight: 700, borderColor: displayColor + "44" }
                     : {}}
                   onClick={() => {
-                    if (opt.value !== ms.labelPos) {
-                      startTransition(async () => {
-                        await updateMilestone({ milestoneId: ms.id, planningId, labelPos: opt.value });
-                      });
-                    }
+                    patchMilestone({ labelPos: opt.value });
+                    startTransition(async () => {
+                      await updateMilestone({ milestoneId: ms.id, planningId, labelPos: opt.value });
+                    });
                   }}
                 >
                   {opt.label}
@@ -504,31 +541,61 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
           {/* Couleur */}
           <div className={styles.fieldRow}>
             <span className={styles.fieldLabel}>Couleur</span>
-            <div className={styles.palette}>
-              {MS_COLORS.map((c) => (
+            <div>
+              <div className={styles.palette}>
+                {MS_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    className={`${styles.swatch} ${displayColor === c ? styles.swatchActive : ""}`}
+                    style={{ background: c }}
+                    title={c}
+                    onClick={() => {
+                      startTransition(async () => {
+                        await updateMilestone({ milestoneId: ms.id, planningId, color: c });
+                      });
+                    }}
+                  />
+                ))}
                 <button
-                  key={c}
-                  className={`${styles.swatch} ${displayColor === c ? styles.swatchActive : ""}`}
-                  style={{ background: c }}
-                  title={c}
+                  className={`${styles.swatchReset} ${!ms.color ? styles.swatchActive : ""}`}
+                  title="Couleur du type"
                   onClick={() => {
                     startTransition(async () => {
-                      await updateMilestone({ milestoneId: ms.id, planningId, color: c });
+                      await updateMilestone({ milestoneId: ms.id, planningId, color: null });
                     });
                   }}
+                >
+                  auto
+                </button>
+              </div>
+              <div className={styles.colorPickerRow}>
+                <input
+                  type="color"
+                  className={styles.colorInput}
+                  value={displayColor}
+                  onChange={(e) => {
+                    startTransition(async () => {
+                      await updateMilestone({ milestoneId: ms.id, planningId, color: e.target.value });
+                    });
+                  }}
+                  title="Choisir une couleur"
                 />
-              ))}
-              <button
-                className={`${styles.swatchReset} ${!ms.color ? styles.swatchActive : ""}`}
-                title="Couleur du type"
-                onClick={() => {
-                  startTransition(async () => {
-                    await updateMilestone({ milestoneId: ms.id, planningId, color: null });
-                  });
-                }}
-              >
-                auto
-              </button>
+                <input
+                  type="text"
+                  className={styles.hexInput}
+                  value={displayColor}
+                  placeholder="#000000"
+                  maxLength={7}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
+                      startTransition(async () => {
+                        await updateMilestone({ milestoneId: ms.id, planningId, color: v });
+                      });
+                    }
+                  }}
+                />
+              </div>
             </div>
           </div>
 

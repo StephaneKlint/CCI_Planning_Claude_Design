@@ -28,8 +28,21 @@ export function PhasePill({
 }: PhasePillProps) {
   if (width < 2) return null;
 
-  const showLabel = width >= 50 && label;
+  const showLabel = width >= 18 && label;
   const showProgress = progress > 0 && progress < 100 && width >= 110;
+
+  // Shorten label for narrow pills
+  const ABBREVS: Record<string, string> = {
+    "Cadrage": "Cad.", "Développement": "Dév.", "Recette": "Rec.",
+    "Formation": "For.", "Personnalisé": "Per.", "dev": "Dév.",
+    "cadrage": "Cad.", "recette": "Rec.",
+  };
+  const displayLabel = (l: string | null | undefined) => {
+    if (!l) return l;
+    if (width >= 50) return l;
+    if (width >= 36) return ABBREVS[l] ?? (l.length > 4 ? l.slice(0, 3) + "." : l);
+    return ABBREVS[l] ?? l.slice(0, 1) + ".";
+  };
 
   const pillStyles: React.CSSProperties = {
     position: "absolute",
@@ -89,12 +102,13 @@ export function PhasePill({
       {showLabel && (
         <span style={{
           position: "relative",
-          paddingLeft: 10, paddingRight: hasNote ? 20 : 10,
+          paddingLeft: width >= 50 ? 10 : 4,
+          paddingRight: hasNote ? 20 : (width >= 50 ? 10 : 4),
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           maxWidth: "100%",
         }}>
-          {label}
-          {showProgress && ` — ${progress}%`}
+          {displayLabel(label)}
+          {showProgress && width >= 110 && ` — ${progress}%`}
         </span>
       )}
       {hasNote && (

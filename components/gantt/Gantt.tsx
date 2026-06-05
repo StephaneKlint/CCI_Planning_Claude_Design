@@ -31,7 +31,7 @@ export function Gantt({
   statuses,
   phaseAssignees,
   phaseTypes: _phaseTypes, // eslint-disable-line @typescript-eslint/no-unused-vars
-  members: _members, // eslint-disable-line @typescript-eslint/no-unused-vars
+  members,
   viewStart,
   viewEnd,
   referenceDate,
@@ -44,17 +44,18 @@ export function Gantt({
   const totalW = timelineWidth(viewStart, viewEnd, ppd);
 
   // Refs for scroll sync
-  const sideRowsRef = useRef<HTMLDivElement>(null); // points to GanttSide's .rowsOuter
+  // sideInnerRef → GanttSide inner content div (transform-based vertical sync)
+  const sideInnerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const syncing = useRef(false);
 
-  // Vertical sync: body → side rows
+  // Vertical sync: body → side (CSS transform, works with overflow:hidden, no re-render)
   const onBodyScroll = useCallback(() => {
     if (syncing.current) return;
     syncing.current = true;
-    if (sideRowsRef.current && bodyRef.current) {
-      sideRowsRef.current.scrollTop = bodyRef.current.scrollTop;
+    if (sideInnerRef.current && bodyRef.current) {
+      sideInnerRef.current.style.transform = `translateY(-${bodyRef.current.scrollTop}px)`;
     }
     if (headerRef.current && bodyRef.current) {
       headerRef.current.scrollLeft = bodyRef.current.scrollLeft;
@@ -149,7 +150,7 @@ export function Gantt({
             lotProgress={lotProgress}
             lotStatus={lotStatus}
             width={SIDE_W}
-            rowsRef={sideRowsRef}
+            innerRef={sideInnerRef}
           />
         </div>
       )}
@@ -184,6 +185,7 @@ export function Gantt({
             milestoneTypes={milestoneTypes}
             statuses={statuses}
             phaseAssignees={phaseAssignees}
+            members={members}
             viewStart={viewStart}
             ppd={ppd}
             referenceDate={referenceDate}

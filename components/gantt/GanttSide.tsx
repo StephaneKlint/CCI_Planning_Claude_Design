@@ -20,8 +20,8 @@ interface GanttSideProps {
   /** effective status per lot: lotId → StatusCode */
   lotStatus: Record<string, StatusCode>;
   width?: number;
-  /** ref forwarded to the scrollable rows container for JS scroll sync */
-  rowsRef?: React.RefObject<HTMLDivElement | null>;
+  /** ref forwarded to the inner rows div for CSS-transform scroll sync */
+  innerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const DOMAIN_HEAD_H = 36;
@@ -34,7 +34,7 @@ export function GanttSide({
   lotProgress,
   lotStatus,
   width = 340,
-  rowsRef,
+  innerRef,
 }: GanttSideProps) {
   const domainById = Object.fromEntries(domains.map((d) => [d.id, d]));
   const lotById = Object.fromEntries(lots.map((l) => [l.id, l]));
@@ -51,9 +51,9 @@ export function GanttSide({
         <span className={styles.headerCount}>{lots.length} lots</span>
       </div>
 
-      {/* Scrollable rows — height matches timeline body, scrollTop synced via Gantt.tsx */}
-      <div className={styles.rowsOuter} ref={rowsRef}>
-        <div style={{ position: "relative", height: totalH }}>
+      {/* Rows container — transform synced by Gantt.tsx via innerRef */}
+      <div className={styles.rowsOuter}>
+        <div ref={innerRef} style={{ position: "relative", height: totalH }}>
           {rows.map((row) => {
             if (row.kind === "domain") {
               const domain = domainById[row.id];

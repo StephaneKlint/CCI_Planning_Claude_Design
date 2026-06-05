@@ -241,6 +241,43 @@
 .swatch:hover { transform: scale(1.12); }
 .swatchActive { border-color: var(--klint-navy, #001036); }
 
+/* Color picker row */
+.colorPickerRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.colorInput {
+  width: 30px;
+  height: 26px;
+  border-radius: 8px;
+  border: 2px solid var(--klint-line, #E6E8EE);
+  cursor: pointer;
+  padding: 1px;
+  background: none;
+  flex-shrink: 0;
+}
+.colorInput::-webkit-color-swatch-wrapper { padding: 0; border-radius: 6px; }
+.colorInput::-webkit-color-swatch { border: none; border-radius: 6px; }
+
+.hexInput {
+  flex: 1;
+  height: 26px;
+  border: 1px solid var(--klint-line, #E6E8EE);
+  border-radius: 8px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--klint-navy, #001036);
+  background: var(--klint-paper, #FAFBFC);
+  outline: none;
+  text-transform: uppercase;
+  max-width: 90px;
+}
+.hexInput:focus { border-color: var(--klint-navy, #001036); background: #fff; }
+
 .swatchReset {
   width: 26px;
   height: 26px;

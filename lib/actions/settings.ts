@@ -35,6 +35,20 @@ export async function deletePhaseType(id: string, planningId: string) {
   revalidatePath(`/parametres`);
 }
 
+const UpdatePhaseTypeSchema = z.object({
+  id:         z.string().uuid(),
+  planningId: z.string().uuid(),
+  label:      z.string().min(1).max(80),
+});
+
+export async function updatePhaseType(input: z.infer<typeof UpdatePhaseTypeSchema>) {
+  const data = UpdatePhaseTypeSchema.parse(input);
+  await db.update(phaseTypes)
+    .set({ label: data.label })
+    .where(and(eq(phaseTypes.id, data.id), eq(phaseTypes.planningId, data.planningId)));
+  revalidatePath(`/parametres`);
+}
+
 // ── Milestone types ───────────────────────────────────────────────────────────
 
 const MilestoneTypeSchema = z.object({
@@ -58,6 +72,21 @@ export async function addMilestoneType(input: z.infer<typeof MilestoneTypeSchema
 
 export async function deleteMilestoneType(id: string, planningId: string) {
   await db.delete(milestoneTypes).where(and(eq(milestoneTypes.id, id), eq(milestoneTypes.planningId, planningId)));
+  revalidatePath(`/parametres`);
+}
+
+const UpdateMilestoneTypeSchema = z.object({
+  id:         z.string().uuid(),
+  planningId: z.string().uuid(),
+  label:      z.string().min(1).max(80),
+  color:      z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+});
+
+export async function updateMilestoneType(input: z.infer<typeof UpdateMilestoneTypeSchema>) {
+  const data = UpdateMilestoneTypeSchema.parse(input);
+  await db.update(milestoneTypes)
+    .set({ label: data.label, color: data.color })
+    .where(and(eq(milestoneTypes.id, data.id), eq(milestoneTypes.planningId, data.planningId)));
   revalidatePath(`/parametres`);
 }
 

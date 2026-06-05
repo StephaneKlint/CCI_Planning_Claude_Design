@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import styles from "./Parametres.module.css";
 import type { GanttData } from "@/lib/db/queries";
 import {
-  addPhaseType, deletePhaseType,
-  addMilestoneType, deleteMilestoneType,
+  addPhaseType, deletePhaseType, updatePhaseType,
+  addMilestoneType, deleteMilestoneType, updateMilestoneType,
   updateDomainCadence, updatePlanningSettings,
 } from "@/lib/actions/settings";
 
@@ -39,11 +39,16 @@ export function ParametresTabs({ data }: { data: GanttData }) {
   // Phase type form state
   const [newPTCode, setNewPTCode] = useState("");
   const [newPTLabel, setNewPTLabel] = useState("");
+  const [editingPTId, setEditingPTId] = useState<string | null>(null);
+  const [editingPTLabel, setEditingPTLabel] = useState("");
 
   // Milestone type form state
   const [newMTCode, setNewMTCode] = useState("");
   const [newMTLabel, setNewMTLabel] = useState("");
   const [newMTColor, setNewMTColor] = useState(PRESET_COLORS[4]);
+  const [editingMTId, setEditingMTId] = useState<string | null>(null);
+  const [editingMTLabel, setEditingMTLabel] = useState("");
+  const [editingMTColor, setEditingMTColor] = useState("");
 
   return (
     <div className={styles.tabs}>
@@ -177,8 +182,35 @@ export function ParametresTabs({ data }: { data: GanttData }) {
                 <tr key={pt.id}>
                   <td className={styles.tdMuted}>{i + 1}</td>
                   <td><code className={styles.codeChip}>{pt.code}</code></td>
-                  <td>{pt.label}</td>
                   <td>
+                    {editingPTId === pt.id ? (
+                      <input
+                        className={styles.addInput}
+                        value={editingPTLabel}
+                        autoFocus
+                        onChange={(e) => setEditingPTLabel(e.target.value)}
+                        onBlur={() => {
+                          if (editingPTLabel.trim() && editingPTLabel !== pt.label) {
+                            startTransition(async () => {
+                              await updatePhaseType({ id: pt.id, planningId: planning.id, label: editingPTLabel.trim() });
+                              router.refresh();
+                            });
+                          }
+                          setEditingPTId(null);
+                        }}
+                        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setEditingPTId(null); }}
+                      />
+                    ) : pt.label}
+                  </td>
+                  <td style={{ display: "flex", gap: 4 }}>
+                    <button
+                      className={styles.editRowBtn}
+                      title="Modifier"
+                      disabled={isPending}
+                      onClick={() => { setEditingPTId(pt.id); setEditingPTLabel(pt.label); }}
+                    >
+                      ✎
+                    </button>
                     <button
                       className={styles.deleteRowBtn}
                       title="Supprimer"
@@ -246,12 +278,53 @@ export function ParametresTabs({ data }: { data: GanttData }) {
                 <tr key={mt.id}>
                   <td className={styles.tdMuted}>{i + 1}</td>
                   <td><code className={styles.codeChip}>{mt.code}</code></td>
-                  <td>{mt.label}</td>
                   <td>
-                    <span className={styles.colorSwatch} style={{ background: mt.color }} />
-                    <span className={styles.tdMuted}>{mt.color}</span>
+                    {editingMTId === mt.id ? (
+                      <input
+                        className={styles.addInput}
+                        value={editingMTLabel}
+                        autoFocus
+                        onChange={(e) => setEditingMTLabel(e.target.value)}
+                        onBlur={() => {
+                          if (editingMTLabel.trim()) {
+                            startTransition(async () => {
+                              await updateMilestoneType({ id: mt.id, planningId: planning.id, label: editingMTLabel.trim(), color: editingMTColor });
+                              router.refresh();
+                            });
+                          }
+                          setEditingMTId(null);
+                        }}
+                        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setEditingMTId(null); }}
+                      />
+                    ) : mt.label}
                   </td>
                   <td>
+                    {editingMTId === mt.id ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <input
+                          type="color"
+                          value={editingMTColor}
+                          style={{ width: 28, height: 24, borderRadius: 6, border: "1px solid #e5e7eb", cursor: "pointer", padding: 1 }}
+                          onChange={(e) => setEditingMTColor(e.target.value)}
+                        />
+                        <span className={styles.tdMuted} style={{ fontSize: 11 }}>{editingMTColor}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <span className={styles.colorSwatch} style={{ background: mt.color }} />
+                        <span className={styles.tdMuted}>{mt.color}</span>
+                      </>
+                    )}
+                  </td>
+                  <td style={{ display: "flex", gap: 4 }}>
+                    <button
+                      className={styles.editRowBtn}
+                      title="Modifier"
+                      disabled={isPending}
+                      onClick={() => { setEditingMTId(mt.id); setEditingMTLabel(mt.label); setEditingMTColor(mt.color); }}
+                    >
+                      ✎
+                    </button>
                     <button
                       className={styles.deleteRowBtn}
                       title="Supprimer"

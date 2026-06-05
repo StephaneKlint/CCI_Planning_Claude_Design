@@ -5,7 +5,7 @@
  * Uses absolute positioning (same rowOffsets as GanttSide).
  */
 import type { RowEntry, ColorMode } from "./types";
-import type { DomainRow, LotRow, PhaseRow, MilestoneRow, MilestoneTypeRow, StatusRow } from "@/lib/db/queries";
+import type { DomainRow, LotRow, PhaseRow, MilestoneRow, MilestoneTypeRow, StatusRow, MemberRow } from "@/lib/db/queries";
 import { PhasePill } from "./PhasePill";
 import { MilestoneFlag } from "./MilestoneFlag";
 import { TodayLine } from "./TodayLine";
@@ -27,6 +27,7 @@ interface TimelineBodyProps {
   milestoneTypes: MilestoneTypeRow[];
   statuses: StatusRow[];
   phaseAssignees: { phaseId: string; memberId: string }[];
+  members: MemberRow[];
   viewStart: string;
   ppd: number;
   referenceDate: string;
@@ -47,6 +48,8 @@ export function TimelineBody({
   milestones,
   milestoneTypes,
   statuses,
+  phaseAssignees,
+  members,
   viewStart,
   ppd,
   referenceDate,
@@ -59,6 +62,14 @@ export function TimelineBody({
   const domainById = Object.fromEntries(domains.map((d) => [d.id, d]));
   const lotById = Object.fromEntries(lots.map((l) => [l.id, l]));
   const statusByCode = Object.fromEntries(statuses.map((s) => [s.code, s]));
+  // Pre-compute first assignee color per phase for "person" color mode
+  const memberColorById = Object.fromEntries(members.map((m) => [m.id, m.color ?? "#6B7280"]));
+  const firstAssigneeColorByPhaseId: Record<string, string> = {};
+  for (const a of phaseAssignees) {
+    if (!firstAssigneeColorByPhaseId[a.phaseId]) {
+      firstAssigneeColorByPhaseId[a.phaseId] = memberColorById[a.memberId] ?? "#6B7280";
+    }
+  }
   const msTypeByCode = Object.fromEntries(milestoneTypes.map((t) => [t.code, t]));
 
   // Fallback labels quand phase.label est null : type code → libellé affiché
@@ -196,12 +207,14 @@ export function TimelineBody({
           const width = right - left;
           const pillTop = row.y + Math.floor((row.h - PILL_H) / 2);
 
-          // Resolve color
+          // Resolve color based on current color mode
           let bg = phase.color ?? domain?.phaseColor ?? "#6B7280";
           let fg = "#ffffff";
           if (colorMode === "status" && phase.status) {
             const s = statusByCode[phase.status];
             if (s) { bg = s.bg; fg = s.color; }
+          } else if (colorMode === "person") {
+            bg = firstAssigneeColorByPhaseId[phase.id] ?? (phase.color ?? domain?.phaseColor ?? "#6B7280");
           }
 
           const isSelected = selectedPhaseIds.has(phase.id);

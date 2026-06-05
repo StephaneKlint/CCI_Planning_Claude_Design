@@ -326,6 +326,26 @@
   border-color: var(--st-late-c);
 }
 
+.editRowBtn {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--klint-line);
+  background: none;
+  color: #9ca3af;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms, color 120ms;
+}
+.editRowBtn:hover:not(:disabled) {
+  background: var(--klint-paper);
+  color: var(--klint-navy);
+}
+
 .colorPresets {
   display: flex;
   gap: 4px;
