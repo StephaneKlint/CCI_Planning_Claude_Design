@@ -8,8 +8,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { phases, lots, milestones, activityLog } from "@/lib/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { phases, lots, milestones, activityLog, planningMembers, users } from "@/lib/db/schema";
+import { eq, inArray, gte, and } from "drizzle-orm";
 import { getGanttData } from "@/lib/db/queries";
 import type { GanttData } from "@/lib/db/queries";
 
@@ -251,4 +251,64 @@ export async function updateMilestone(input: z.infer<typeof UpdateMilestoneDates
 // ---------------------------------------------------------------------------
 export async function fetchPlanningData(planningId: string): Promise<GanttData | null> {
   return getGanttData(planningId);
+}
+
+// ---------------------------------------------------------------------------
+// Présence — heartbeat + active members
+// ---------------------------------------------------------------------------
+
+/**
+ * Heartbeat — met à jour last_seen_at pour le membre courant.
+ * Appelé toutes les 30s côté client.
+ * En Jalon 5, memberId viendra de la session auth.
+ * Pour l'instant, on accepte le memberId passé par le client.
+ */
+export async function heartbeat(planningId: string, memberId: string): Promise<void> {
+  if (!planningId || !memberId) return;
+  await db
+    .update(planningMembers)
+    .set({ lastSeenAt: new Date() })
+    .where(
+      and(
+        eq(planningMembers.planningId, planningId),
+        eq(planningMembers.id, memberId)
+      )
+    );
+}
+
+export interface ActiveMember {
+  memberId: string;
+  initials: string;
+  color: string;
+  userName: string;
+}
+
+/**
+ * Retourne les membres actifs dans les 5 dernières minutes.
+ * Appelé par TanStack Query (refetchInterval 30s).
+ */
+export async function getActiveMembers(planningId: string): Promise<ActiveMember[]> {
+  const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+  const rows = await db
+    .select({
+      memberId: planningMembers.id,
+      initials: planningMembers.initials,
+      color: planningMembers.color,
+      userName: users.name,
+    })
+    .from(planningMembers)
+    .innerJoin(users, eq(planningMembers.userId, users.id))
+    .where(
+      and(
+        eq(planningMembers.planningId, planningId),
+        gte(planningMembers.lastSeenAt, fiveMinAgo)
+      )
+    );
+
+  return rows.map((r) => ({
+    memberId: r.memberId,
+    initials: r.initials ?? "?",
+    color: r.color ?? "#001D63",
+    userName: r.userName,
+  }));
 }

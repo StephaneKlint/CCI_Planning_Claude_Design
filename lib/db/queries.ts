@@ -65,6 +65,7 @@ export async function getGanttData(planningId: string): Promise<GanttData | null
       projectRoleId: planningMembers.projectRoleId,
       initials: planningMembers.initials,
       color: planningMembers.color,
+      lastSeenAt: planningMembers.lastSeenAt,
       userName: users.name,
       userEmail: users.email,
     }).from(planningMembers)

@@ -1,28 +1,36 @@
 "use client";
 /**
- * GanttView — client shell: Toolbar + Gantt + EditPanel + BulkBar + CommandPalette.
+ * GanttView — Toolbar + Gantt + EditPanel + BulkBar + CommandPalette + Présence.
+ * Polling 10s (données) + heartbeat/présence 30s via Neon.
  */
 import { Gantt } from "@/components/gantt/Gantt";
 import { Toolbar } from "@/components/chrome/Toolbar";
 import { EditPanel } from "@/components/panels/EditPanel";
 import { BulkBar } from "@/components/panels/BulkBar";
 import { CommandPalette } from "@/components/panels/CommandPalette";
+import { PresenceStack } from "@/components/chrome/PresenceStack";
 import { useGanttStore } from "@/store/ganttStore";
 import { usePlanning } from "@/lib/queries/usePlanning";
+import { usePresence } from "@/lib/queries/usePresence";
 import type { GanttProps } from "@/components/gantt/types";
 import type { GanttData } from "@/lib/db/queries";
 import styles from "./GanttView.module.css";
 
 interface GanttViewProps extends GanttProps {
   initialData: GanttData;
+  /** Premier membre du planning — utilisé pour le heartbeat demo (Jalon 5: auth session) */
+  demoMemberId?: string;
 }
 
-export function GanttView({ initialData, ...props }: GanttViewProps) {
+export function GanttView({ initialData, demoMemberId, ...props }: GanttViewProps) {
   const { zoom, setZoom, colorMode, setColorMode, setCommandPaletteOpen } = useGanttStore();
 
-  // TanStack Query — keeps data fresh, allows optimistic updates
+  // Données en live — polling 10s
   const { data } = usePlanning(props.planningId, initialData);
   const liveData = data ?? initialData;
+
+  // Présence — heartbeat 30s + polling membres actifs 30s
+  const activeMembers = usePresence(props.planningId, demoMemberId);
 
   const colorModeLabel =
     colorMode === "domain" ? "Domaine" : colorMode === "status" ? "Statut" : "Personne";
@@ -42,6 +50,7 @@ export function GanttView({ initialData, ...props }: GanttViewProps) {
         onSearchClick={() => setCommandPaletteOpen(true)}
         onColorModeClick={handleColorMode}
         colorModeLabel={colorModeLabel}
+        presenceStack={<PresenceStack members={activeMembers} />}
       />
       <div className={styles.ganttOuter}>
         <Gantt
@@ -56,7 +65,6 @@ export function GanttView({ initialData, ...props }: GanttViewProps) {
         />
       </div>
 
-      {/* Panels */}
       <EditPanel planningId={props.planningId} data={liveData} />
       <BulkBar planningId={props.planningId} />
       <CommandPalette data={liveData} planningId={props.planningId} />

@@ -114,6 +114,7 @@ export const planningMembers = pgTable(
     projectRoleId: uuid("project_role_id").references(() => projectRoles.id, { onDelete: "set null" }),
     initials: varchar("initials", { length: 3 }),
     color: varchar("color", { length: 9 }),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
   },
   (t) => [index("uniq_member").on(t.planningId, t.userId)]
 );

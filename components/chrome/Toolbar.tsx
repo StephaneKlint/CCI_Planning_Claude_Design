@@ -17,6 +17,7 @@ interface ToolbarProps {
   onColorModeClick?: () => void;
   onSearchClick?: () => void;
   colorModeLabel?: string;
+  presenceStack?: React.ReactNode;
 }
 
 const ZOOM_LEVELS: ZoomLevel[] = ["1m", "3m", "6m", "12m"];
@@ -28,7 +29,10 @@ export function Toolbar({
   onTogglePanel,
   onVisibilityClick,
   onColorModeClick,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onSearchClick: _onSearchClick,
   colorModeLabel = "Domaine",
+  presenceStack,
 }: ToolbarProps) {
   return (
     <div className={styles.toolbar} role="toolbar" aria-label="Barre d'outils du planning">
@@ -95,8 +99,9 @@ export function Toolbar({
 
       <div className={styles.divider} aria-hidden />
 
-      {/* Groupe droite — Responsive spacer */}
+      {/* Groupe droite — Présence + tri */}
       <div className={`${styles.group} ${styles.groupRight}`}>
+        {presenceStack}
         <button className={styles.btn} aria-label="Tri" title="Trier les lots">
           <Icon name="sort" size={14} />
         </button>

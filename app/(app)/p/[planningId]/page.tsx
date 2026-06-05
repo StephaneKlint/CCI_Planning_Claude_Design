@@ -16,9 +16,14 @@ export default async function PlanningPage({ params }: Props) {
 
   const referenceDate = data.planning.referenceDate ?? new Date().toISOString().slice(0, 10);
 
+  // Jalon 5 : remplacera par l'id du membre de la session auth.
+  // Pour l'instant, on simule avec le premier membre du planning.
+  const demoMemberId = data.members[0]?.id;
+
   return (
     <GanttView
       initialData={data}
+      demoMemberId={demoMemberId}
       planningId={planningId}
       domains={data.domains}
       lots={data.lots}
