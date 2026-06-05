@@ -3,8 +3,9 @@ import {
   plannings, domains, lots, phases, milestones,
   planningMembers, users, phaseAssignees,
   phaseTypes, milestoneTypes, statuses, planningSettings,
+  activityLog,
 } from "./schema";
-import { eq, asc, inArray } from "drizzle-orm";
+import { eq, asc, desc, inArray, and } from "drizzle-orm";
 
 export type DomainRow = typeof domains.$inferSelect;
 export type LotRow = typeof lots.$inferSelect;
@@ -97,4 +98,52 @@ export async function listPlannings() {
     .from(plannings)
     .where(eq(plannings.archived, false))
     .orderBy(asc(plannings.createdAt));
+}
+
+export interface ActivityEntry {
+  id: string;
+  verb: string;
+  targetType: string | null;
+  summary: string;
+  createdAt: Date;
+  actorName: string | null;
+  actorInitials: string | null;
+  actorColor: string | null;
+}
+
+export async function getActivityLog(planningId: string, limit = 150): Promise<ActivityEntry[]> {
+  const rows = await db
+    .select({
+      id: activityLog.id,
+      verb: activityLog.verb,
+      targetType: activityLog.targetType,
+      summary: activityLog.summary,
+      createdAt: activityLog.createdAt,
+      actorName: users.name,
+      actorInitials: planningMembers.initials,
+      actorColor: planningMembers.color,
+    })
+    .from(activityLog)
+    .leftJoin(users, eq(activityLog.actorId, users.id))
+    .leftJoin(
+      planningMembers,
+      and(
+        eq(planningMembers.userId, activityLog.actorId!),
+        eq(planningMembers.planningId, activityLog.planningId)
+      )
+    )
+    .where(eq(activityLog.planningId, planningId))
+    .orderBy(desc(activityLog.createdAt))
+    .limit(limit);
+
+  return rows.map((r) => ({
+    id: r.id,
+    verb: r.verb,
+    targetType: r.targetType,
+    summary: r.summary,
+    createdAt: r.createdAt,
+    actorName: r.actorName ?? null,
+    actorInitials: r.actorInitials ?? (r.actorName ? r.actorName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() : "?"),
+    actorColor: r.actorColor ?? "#001D63",
+  }));
 }
