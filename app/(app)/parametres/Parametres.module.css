@@ -199,6 +199,155 @@
   font-weight: var(--weight-semibold);
 }
 
+/* ─── Formulaires d'édition ─────────────────────────────────────── */
+.settingsForm {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.settingsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--klint-paper);
+  border-radius: var(--radius-input);
+  border: 1px solid var(--klint-line);
+}
+
+.settingRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--text-13);
+  color: var(--klint-navy);
+}
+
+.settingLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-13);
+  font-weight: var(--weight-medium);
+  color: var(--klint-navy);
+  cursor: pointer;
+  flex: 1;
+}
+
+.numInput {
+  width: 70px;
+  padding: 4px 8px;
+  font-family: var(--font-display);
+  font-size: var(--text-13);
+  border: 1.5px solid var(--klint-line);
+  border-radius: var(--radius-input);
+  color: var(--klint-navy);
+  background: var(--klint-white);
+}
+
+.saveBtn {
+  align-self: flex-start;
+  padding: 7px 16px;
+  font-family: var(--font-display);
+  font-size: var(--text-13);
+  font-weight: var(--weight-semibold);
+  background: var(--klint-navy);
+  color: white;
+  border: none;
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  transition: opacity 140ms;
+}
+
+.saveBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+.saveBtn:hover:not(:disabled) { opacity: 0.88; }
+
+.addRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--klint-line);
+  flex-wrap: wrap;
+}
+
+.addInput {
+  flex: 1;
+  min-width: 100px;
+  padding: 7px 10px;
+  font-family: var(--font-display);
+  font-size: var(--text-13);
+  border: 1.5px solid var(--klint-line);
+  border-radius: var(--radius-btn);
+  color: var(--klint-navy);
+  background: var(--klint-paper);
+  outline: none;
+  transition: border-color 120ms;
+}
+
+.addInput:focus { border-color: var(--klint-navy); }
+
+.addBtn {
+  padding: 7px 14px;
+  font-family: var(--font-display);
+  font-size: var(--text-13);
+  font-weight: var(--weight-semibold);
+  background: var(--klint-navy);
+  color: white;
+  border: none;
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.addBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.deleteRowBtn {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--klint-line);
+  background: none;
+  color: #9ca3af;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms, color 120ms;
+}
+
+.deleteRowBtn:hover:not(:disabled) {
+  background: var(--st-late-bg);
+  color: var(--st-late-c);
+  border-color: var(--st-late-c);
+}
+
+.colorPresets {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.presetDot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 120ms, border-color 120ms;
+}
+
+.presetDot:hover { transform: scale(1.2); }
+
+.presetDotActive {
+  border-color: var(--klint-navy);
+  transform: scale(1.15);
+}
+
 .empty {
   padding: 40px;
   color: #9ca3af;

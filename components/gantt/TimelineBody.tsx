@@ -55,7 +55,7 @@ export function TimelineBody({
   showDomainBands,
   viewEnd,
 }: TimelineBodyProps) {
-  const { togglePhaseSelection, selectedPhaseIds } = useGanttStore();
+  const { togglePhaseSelection, selectedPhaseIds, openEdit } = useGanttStore();
   const domainById = Object.fromEntries(domains.map((d) => [d.id, d]));
   const lotById = Object.fromEntries(lots.map((l) => [l.id, l]));
   const statusByCode = Object.fromEntries(statuses.map((s) => [s.code, s]));
@@ -247,6 +247,7 @@ export function TimelineBody({
               rowY={row.y}
               rowH={row.h}
               side={layout.side}
+              onClick={(e) => { e.stopPropagation(); openEdit({ kind: "milestone", id: ms.id }); }}
               level={layout.level}
               label={ms.label}
               color={color}

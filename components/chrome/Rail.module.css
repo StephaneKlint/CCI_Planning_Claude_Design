@@ -169,3 +169,56 @@
 .railAvatar:hover::after {
   opacity: 1;
 }
+
+/* Profile menu */
+.profileMenu {
+  position: absolute;
+  bottom: 0;
+  left: calc(100% + 10px);
+  background: var(--klint-white, #fff);
+  border: 1px solid var(--klint-line, #E6E8EE);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 16, 54, 0.14);
+  min-width: 180px;
+  z-index: 200;
+  overflow: hidden;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profileInitials {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0 auto 4px;
+}
+
+.profileMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-family: var(--font-display, system-ui);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--klint-navy, #001036);
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 120ms;
+}
+
+.profileMenuItem:hover {
+  background: var(--klint-paper, #FAFBFC);
+}

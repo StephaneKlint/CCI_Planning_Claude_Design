@@ -260,3 +260,25 @@
   margin: 0;
   padding: 4px 0;
 }
+
+/* Jalons groupes J+30/60/90 */
+.msGroup {
+  margin-bottom: 12px;
+}
+
+.msGroup:last-child {
+  margin-bottom: 0;
+}
+
+.msGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: var(--radius-input);
+  font-size: var(--text-11);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}

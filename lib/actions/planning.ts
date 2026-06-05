@@ -218,19 +218,31 @@ export async function updateLot(input: z.infer<typeof UpdateLotSchema>) {
 // Milestone mutations
 // ---------------------------------------------------------------------------
 
-const UpdateMilestoneDatesSchema = z.object({
+const UpdateMilestoneSchema = z.object({
   milestoneId: z.string().uuid(),
   planningId: z.string().uuid(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   label: z.string().min(1).max(200).optional(),
+  note: z.string().max(2000).nullable().optional(),
+  color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).nullable().optional(),
+  type: z.string().max(40).optional(),
+  labelPos: z.enum(["auto", "above", "below"]).optional(),
 });
 
-export async function updateMilestone(input: z.infer<typeof UpdateMilestoneDatesSchema>) {
-  const data = UpdateMilestoneDatesSchema.parse(input);
+export async function updateMilestone(input: z.infer<typeof UpdateMilestoneSchema>) {
+  const data = UpdateMilestoneSchema.parse(input);
   await assertCanEdit(data.planningId);
 
-  const updates: Partial<{ date: string; label: string }> = { date: data.date };
-  if (data.label !== undefined) updates.label = data.label;
+  const updates: Partial<{
+    date: string; label: string; note: string | null;
+    color: string | null; type: string; labelPos: "auto" | "above" | "below";
+  }> = {};
+  if (data.date    !== undefined) updates.date     = data.date;
+  if (data.label   !== undefined) updates.label    = data.label;
+  if (data.note    !== undefined) updates.note     = data.note;
+  if (data.color   !== undefined) updates.color    = data.color;
+  if (data.type    !== undefined) updates.type     = data.type;
+  if (data.labelPos !== undefined) updates.labelPos = data.labelPos;
 
   const [updated] = await db
     .update(milestones)
@@ -238,8 +250,10 @@ export async function updateMilestone(input: z.infer<typeof UpdateMilestoneDates
     .where(eq(milestones.id, data.milestoneId))
     .returning({ id: milestones.id, date: milestones.date, label: milestones.label });
 
-  await logActivity(data.planningId, "moved", "milestone", data.milestoneId,
-    `Jalon déplacé au ${data.date}`);
+  const desc = data.date
+    ? `Jalon déplacé au ${data.date}`
+    : `Jalon modifié : ${data.label ?? ""}`;
+  await logActivity(data.planningId, "updated", "milestone", data.milestoneId, desc);
 
   revalidatePath(`/p/${data.planningId}`);
   return updated;

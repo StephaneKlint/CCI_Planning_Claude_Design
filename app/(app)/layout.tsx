@@ -4,11 +4,12 @@
  */
 import { auth } from "@/auth";
 import { Rail } from "@/components/chrome/Rail";
-import { Topbar } from "@/components/chrome/Topbar";
+import { TopbarWrapper } from "@/components/chrome/TopbarWrapper";
+import { listPlannings } from "@/lib/db/queries";
 import styles from "./layout.module.css";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
+  const [session, plannings] = await Promise.all([auth(), listPlannings()]);
   const user = session?.user;
 
   const initials = user?.name
@@ -19,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <>
       <Rail avatarInitials={initials} />
       <div className={styles.content}>
-        <Topbar />
+        <TopbarWrapper plannings={plannings} />
         <main className={styles.main}>{children}</main>
       </div>
     </>

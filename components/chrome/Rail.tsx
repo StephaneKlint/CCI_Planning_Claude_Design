@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { Icon } from "@/components/ui/Icon";
 import styles from "./Rail.module.css";
 import type { IconName } from "@/components/ui/Icon";
@@ -32,6 +34,7 @@ interface RailProps {
 
 export function Rail({ avatarInitials = "?", avatarColor = "#001D63" }: RailProps) {
   const pathname = usePathname();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const isActive = (href: string) =>
     href === "/p" ? pathname.startsWith("/p") : pathname.startsWith(href);
@@ -73,14 +76,35 @@ export function Rail({ avatarInitials = "?", avatarColor = "#001D63" }: RailProp
           </Link>
         ))}
 
-        <button
-          className={styles.railAvatar}
-          aria-label="Menu profil"
-          data-label="Profil"
-          style={{ background: avatarColor }}
-        >
-          {avatarInitials.slice(0, 2).toUpperCase()}
-        </button>
+        <div style={{ position: "relative" }}>
+          <button
+            className={styles.railAvatar}
+            aria-label="Menu profil"
+            data-label="Profil"
+            style={{ background: avatarColor }}
+            onClick={() => setProfileOpen((o) => !o)}
+          >
+            {avatarInitials.slice(0, 2).toUpperCase()}
+          </button>
+          {profileOpen && (
+            <div className={styles.profileMenu}>
+              <div className={styles.profileInitials} style={{ background: avatarColor }}>
+                {avatarInitials.slice(0, 2).toUpperCase()}
+              </div>
+              <button
+                className={styles.profileMenuItem}
+                onClick={() => signOut({ callbackUrl: "/login" })}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Se déconnecter
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   );

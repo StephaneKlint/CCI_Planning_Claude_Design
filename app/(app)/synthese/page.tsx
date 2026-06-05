@@ -59,17 +59,24 @@ export default async function SynthesePage() {
     return { domain, avg, phaseCount: domPhases.length, lotCount: domLots.length };
   }).filter((d) => d.phaseCount > 0);
 
-  // --- Upcoming milestones (next 30 days) ---
+  // --- Upcoming milestones J+30 / J+60 / J+90 ---
   const todayStr = new Date().toISOString().split("T")[0];
-  const in30Str = new Date(Date.now() + 30 * 86_400_000).toISOString().split("T")[0];
-  const upcoming = milestones
-    .filter((m) => m.date >= todayStr && m.date <= in30Str)
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map((m) => {
+  const in30Str  = new Date(Date.now() +  30 * 86_400_000).toISOString().split("T")[0];
+  const in60Str  = new Date(Date.now() +  60 * 86_400_000).toISOString().split("T")[0];
+  const in90Str  = new Date(Date.now() +  90 * 86_400_000).toISOString().split("T")[0];
+
+  function enrichMs(list: typeof milestones) {
+    return list.map((m) => {
       const lot = lots.find((l) => l.id === m.lotId);
       const domain = lot ? domains.find((d) => d.id === lot.domainId) : null;
       return { m, lot, domain };
     });
+  }
+
+  const upcoming30 = enrichMs(milestones.filter((m) => m.date >= todayStr && m.date <= in30Str).sort((a, b) => a.date.localeCompare(b.date)));
+  const upcoming60 = enrichMs(milestones.filter((m) => m.date > in30Str  && m.date <= in60Str).sort((a, b) => a.date.localeCompare(b.date)));
+  const upcoming90 = enrichMs(milestones.filter((m) => m.date > in60Str  && m.date <= in90Str).sort((a, b) => a.date.localeCompare(b.date)));
+  const upcoming = upcoming30; // backward compat
 
   // --- Late / risk phases ---
   const latePhases = phases
@@ -98,12 +105,20 @@ export default async function SynthesePage() {
       {/* KPIs */}
       <div className={styles.kpiGrid}>
         <div className={styles.kpiCard}>
+          <span className={styles.kpiValue}>{domains.length}</span>
+          <span className={styles.kpiLabel}>Domaines</span>
+        </div>
+        <div className={styles.kpiCard}>
+          <span className={styles.kpiValue}>{lots.length}</span>
+          <span className={styles.kpiLabel}>Projets</span>
+        </div>
+        <div className={styles.kpiCard}>
           <span className={styles.kpiValue}>{total}</span>
-          <span className={styles.kpiLabel}>Phases totales</span>
+          <span className={styles.kpiLabel}>Phases</span>
         </div>
         <div className={`${styles.kpiCard} ${styles.kpiProgress}`}>
           <span className={styles.kpiValue}>{avgProgress}%</span>
-          <span className={styles.kpiLabel}>Avancement moyen</span>
+          <span className={styles.kpiLabel}>Avancement</span>
         </div>
         <div className={`${styles.kpiCard} ${styles.kpiInProgress}`}>
           <span className={styles.kpiValue}>{counts.in_progress}</span>
@@ -124,6 +139,10 @@ export default async function SynthesePage() {
         <div className={`${styles.kpiCard} ${styles.kpiLate}`}>
           <span className={styles.kpiValue}>{counts.late}</span>
           <span className={styles.kpiLabel}>En retard</span>
+        </div>
+        <div className={styles.kpiCard}>
+          <span className={styles.kpiValue}>{upcoming30.length + upcoming60.length + upcoming90.length}</span>
+          <span className={styles.kpiLabel}>Jalons 90j</span>
         </div>
       </div>
 
@@ -152,32 +171,44 @@ export default async function SynthesePage() {
       </section>
 
       <div className={styles.twoCol}>
-        {/* Upcoming milestones */}
+        {/* Jalons J+30 / J+60 / J+90 */}
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>
-            Prochains jalons — 30 jours
-            <span className={styles.badge}>{upcoming.length}</span>
+            Prochains jalons
           </h2>
-          {upcoming.length === 0 ? (
-            <p className={styles.empty}>Aucun jalon dans les 30 prochains jours.</p>
-          ) : (
-            <ul className={styles.itemList}>
-              {upcoming.map(({ m, lot, domain }) => (
-                <li key={m.id} className={styles.item}>
-                  <span className={styles.itemDate}>{fmt(m.date)}</span>
-                  <span className={styles.itemDomainChip}
-                    style={{
-                      background: domain ? `var(--d-${domain.code}-bg)` : "#f1f5f9",
-                      color: domain ? `var(--d-${domain.code}-strong)` : "#64748b",
-                    }}>
-                    {domain?.code.toUpperCase() ?? "—"}
-                  </span>
-                  <span className={styles.itemLabel}>{m.label}</span>
-                  {lot && <span className={styles.itemSub}>{lot.name}</span>}
-                </li>
-              ))}
-            </ul>
-          )}
+
+          {[
+            { label: "J+30", list: upcoming30, color: "#DC2626", bg: "#FEE2E2" },
+            { label: "J+60", list: upcoming60, color: "#EA580C", bg: "#FEF3C7" },
+            { label: "J+90", list: upcoming90, color: "#15803D", bg: "#DCFCE7" },
+          ].map(({ label, list, color, bg }) => (
+            <div key={label} className={styles.msGroup}>
+              <div className={styles.msGroupHeader} style={{ background: bg, color }}>
+                {label}
+                <span className={styles.badge} style={{ background: color + "22", color }}>{list.length}</span>
+              </div>
+              {list.length === 0 ? (
+                <p className={styles.emptyGood} style={{ padding: "6px 0" }}>Aucun jalon.</p>
+              ) : (
+                <ul className={styles.itemList}>
+                  {list.map(({ m, lot, domain }) => (
+                    <li key={m.id} className={styles.item}>
+                      <span className={styles.itemDate}>{fmt(m.date)}</span>
+                      <span className={styles.itemDomainChip}
+                        style={{
+                          background: domain ? `var(--d-${domain.code}-bg)` : "#f1f5f9",
+                          color: domain ? `var(--d-${domain.code}-strong)` : "#64748b",
+                        }}>
+                        {domain?.code.toUpperCase() ?? "—"}
+                      </span>
+                      <span className={styles.itemLabel}>{m.label}</span>
+                      {lot && <span className={styles.itemSub}>{lot.name}</span>}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
         </section>
 
         {/* Late + risk */}

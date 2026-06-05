@@ -377,38 +377,167 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
     const ms = data.milestones.find((m) => m.id === editTarget.id);
     if (!ms) return null;
 
+    const lot = data.lots.find((l) => l.id === ms.lotId);
+    const msTypeColor = data.milestoneTypes.find((t) => t.code === ms.type)?.color ?? "#7C3AED";
+    const displayColor = ms.color ?? msTypeColor;
+
+    const MS_COLORS = [
+      "#1E3A8A", "#312E81", "#65A30D", "#0D9488",
+      "#7C3AED", "#DC2626", "#EA580C", "#0369A1",
+    ];
+
+    const LABEL_POS_OPTIONS: { value: "auto" | "above" | "below"; label: string }[] = [
+      { value: "auto",  label: "Auto"    },
+      { value: "above", label: "Dessus"  },
+      { value: "below", label: "Dessous" },
+    ];
+
     return (
-      <div className={styles.panel} role="dialog" aria-label="Jalon">
+      <div className={styles.panel} role="dialog" aria-label="Édition jalon">
         <div className={styles.header}>
           <div className={styles.headerLeft}>
-            <span className={styles.modeTag}>Jalon</span>
+            <span className={styles.modeTag} style={{ background: displayColor + "22", color: displayColor }}>
+              Jalon
+            </span>
+            {lot && <span className={styles.headerSub}>{lot.name}</span>}
           </div>
-          <button className={styles.closeBtn} onClick={closeEdit}><Icon name="close" size={14} /></button>
+          <button className={styles.closeBtn} onClick={closeEdit} aria-label="Fermer">
+            <Icon name="close" size={14} />
+          </button>
         </div>
+
+        {/* Label éditable */}
         <div className={styles.titleRow}>
-          <h2 className={styles.title}>{ms.label}</h2>
+          <input
+            key={ms.id + "-label"}
+            className={styles.title}
+            style={{ border: "none", background: "none", width: "100%", outline: "none", padding: 0, fontFamily: "inherit", fontSize: "inherit", fontWeight: "inherit" }}
+            defaultValue={ms.label}
+            placeholder="Libellé du jalon"
+            onBlur={(e) => {
+              const val = e.target.value.trim();
+              if (val && val !== ms.label) {
+                startTransition(async () => {
+                  await updateMilestone({ milestoneId: ms.id, planningId, label: val });
+                });
+              }
+            }}
+          />
         </div>
+
         <div className={styles.body}>
+          {/* Type */}
+          <div className={styles.fieldRow}>
+            <span className={styles.fieldLabel}>Type</span>
+            <select
+              key={ms.id + "-type"}
+              className={styles.select}
+              defaultValue={ms.type}
+              onChange={(e) => {
+                startTransition(async () => {
+                  await updateMilestone({ milestoneId: ms.id, planningId, type: e.target.value });
+                });
+              }}
+            >
+              {data.milestoneTypes.map((t) => (
+                <option key={t.id} value={t.code}>{t.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Date */}
           <div className={styles.fieldRow}>
             <span className={styles.fieldLabel}>Date</span>
             <input
+              key={ms.id + "-date"}
               type="date"
               className={styles.dateInput}
               defaultValue={ms.date}
               onBlur={(e) => {
+                if (e.target.value && e.target.value !== ms.date) {
+                  startTransition(async () => {
+                    await updateMilestone({ milestoneId: ms.id, planningId, date: e.target.value });
+                  });
+                }
+              }}
+            />
+          </div>
+
+          {/* Position étiquette */}
+          <div className={styles.fieldRow}>
+            <span className={styles.fieldLabel}>Étiquette</span>
+            <div style={{ display: "flex", gap: 4 }}>
+              {LABEL_POS_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  className={styles.statusBtn}
+                  style={ms.labelPos === opt.value
+                    ? { background: displayColor + "22", color: displayColor, fontWeight: 700, borderColor: displayColor + "44" }
+                    : {}}
+                  onClick={() => {
+                    if (opt.value !== ms.labelPos) {
+                      startTransition(async () => {
+                        await updateMilestone({ milestoneId: ms.id, planningId, labelPos: opt.value });
+                      });
+                    }
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Couleur */}
+          <div className={styles.fieldRow}>
+            <span className={styles.fieldLabel}>Couleur</span>
+            <div className={styles.palette}>
+              {MS_COLORS.map((c) => (
+                <button
+                  key={c}
+                  className={`${styles.swatch} ${displayColor === c ? styles.swatchActive : ""}`}
+                  style={{ background: c }}
+                  title={c}
+                  onClick={() => {
+                    startTransition(async () => {
+                      await updateMilestone({ milestoneId: ms.id, planningId, color: c });
+                    });
+                  }}
+                />
+              ))}
+              <button
+                className={`${styles.swatchReset} ${!ms.color ? styles.swatchActive : ""}`}
+                title="Couleur du type"
+                onClick={() => {
+                  startTransition(async () => {
+                    await updateMilestone({ milestoneId: ms.id, planningId, color: null });
+                  });
+                }}
+              >
+                auto
+              </button>
+            </div>
+          </div>
+
+          {/* Note */}
+          <div className={styles.fieldRow} style={{ flexDirection: "column", gap: 4 }}>
+            <span className={styles.fieldLabel}>Note</span>
+            <textarea
+              key={ms.id + "-note"}
+              className={styles.textarea}
+              defaultValue={ms.note ?? ""}
+              placeholder="Note optionnelle…"
+              rows={3}
+              onBlur={(e) => {
+                const val = e.target.value || null;
                 startTransition(async () => {
-                  await updateMilestone({ milestoneId: ms.id, planningId, date: e.target.value });
+                  await updateMilestone({ milestoneId: ms.id, planningId, note: val });
                 });
               }}
             />
           </div>
-          {ms.note && (
-            <div className={styles.fieldRow}>
-              <span className={styles.fieldLabel}>Note</span>
-              <p style={{ fontSize: 12, color: "#374151", margin: 0 }}>{ms.note}</p>
-            </div>
-          )}
         </div>
+
         <div className={styles.footer}>
           <Button variant="ghost" size="sm" onClick={closeEdit}>Fermer</Button>
         </div>
