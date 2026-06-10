@@ -14,6 +14,9 @@ interface NavItem {
   label: string;
 }
 
+// Pages that should receive ?planningId= when navigating from a planning
+const PLANNING_AWARE = new Set(["/synthese", "/ressources", "/parametres"]);
+
 const TOP_NAV: NavItem[] = [
   { href: "/p",          icon: "calendar",  label: "Planning"   },
   { href: "/synthese",   icon: "chartLine", label: "Synthèse"   },
@@ -36,20 +39,31 @@ export function Rail({ avatarInitials = "?", avatarColor = "#001D63" }: RailProp
   const pathname = usePathname();
   const [profileOpen, setProfileOpen] = useState(false);
 
+  // Extract planningId from current URL (e.g. /p/[planningId]/...)
+  const pathPlanningId = pathname.startsWith("/p/") ? pathname.split("/")[2] : null;
+
   const isActive = (href: string) =>
     href === "/p" ? pathname.startsWith("/p") : pathname.startsWith(href);
 
+  // Inject ?planningId= for context-aware pages when a planning is active
+  const resolveHref = (href: string) =>
+    pathPlanningId && PLANNING_AWARE.has(href) ? `${href}?planningId=${pathPlanningId}` : href;
+
   return (
     <nav className={styles.rail} aria-label="Navigation principale">
+      {/* Logo Klint */}
       <div className={styles.brand} aria-hidden>
-        <span className={styles.brandK}>K</span>
+        <div className={styles.brandMark}>
+          <span className={styles.brandK}>K</span>
+          <span className={styles.brandSub}>LINT</span>
+        </div>
       </div>
 
       <div className={styles.topNav}>
         {TOP_NAV.map((item) => (
           <Link
             key={item.href}
-            href={item.href}
+            href={resolveHref(item.href)}
             prefetch={false}
             className={`${styles.railBtn} ${isActive(item.href) ? styles.active : ""}`}
             aria-label={item.label}

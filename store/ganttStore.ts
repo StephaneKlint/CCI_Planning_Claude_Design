@@ -9,7 +9,8 @@ export type EditTarget =
   | { kind: "phase"; id: string }
   | { kind: "lot"; id: string }
   | { kind: "milestone"; id: string }
-  | { kind: "create"; lotId?: string }
+  | { kind: "create-lot"; domainId: string }
+  | { kind: "create-phase"; lotId: string }
   | null;
 
 interface GanttState {

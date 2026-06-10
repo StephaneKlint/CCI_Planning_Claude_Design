@@ -546,3 +546,20 @@
   margin-left: auto;
 }
 .deleteBtn:hover { background: #FEE2E2; }
+
+/* ── Création (submit) button ── */
+.createSubmitBtn {
+  margin-left: auto;
+  padding: 6px 16px;
+  border-radius: 8px;
+  border: none;
+  background: var(--klint-navy, #001036);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-display, system-ui);
+  cursor: pointer;
+  transition: opacity 120ms, background 120ms;
+}
+.createSubmitBtn:hover { background: #002070; }
+.createSubmitBtn:disabled { opacity: 0.4; cursor: not-allowed; }

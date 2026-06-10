@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { GanttData } from "@/lib/db/queries";
+import { useRouter } from "next/navigation";
+import type { GanttData, MemberRow } from "@/lib/db/queries";
 import { togglePhaseAssignee } from "@/lib/actions/planning";
+import { addMember, updateMember, removeMember } from "@/lib/actions/members";
 import styles from "./Ressources.module.css";
 
 interface Props {
@@ -17,39 +19,57 @@ const PHASE_TYPE_LABELS: Record<string, string> = {
   custom: "Custom",
 };
 
+const MEMBER_COLORS = [
+  "#001D63", "#3B82F6", "#16A34A", "#DC2626",
+  "#9069E0", "#EA580C", "#0D9488", "#E8568A",
+];
+
 function fmt(d: string) {
   const parts = d.split("-");
   return `${parts[2]}/${parts[1]}`;
 }
 
 export function RessourcesClient({ data }: Props) {
-  const { planning, domains, lots, phases, members } = data;
+  const { planning, domains, lots, phases } = data;
+  const router = useRouter();
 
   // Local copy of assignees for optimistic updates
   const [localAssignees, setLocalAssignees] = useState<{ phaseId: string; memberId: string }[]>(
     () => [...data.phaseAssignees]
   );
 
+  // Track optimistically-deleted members
+  const [deletedMemberIds, setDeletedMemberIds] = useState<Set<string>>(new Set());
+
   // Which member attribution modal is open
   const [modalMemberId, setModalMemberId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
-  // ── Toggle a single phase for a member ────────────────────────────
+  // ── Member CRUD modal state ────────────────────────────────────────────────
+  const [memberModal, setMemberModal] = useState<{ type: "add" | "edit"; member?: MemberRow } | null>(null);
+  const [memberFormName, setMemberFormName] = useState("");
+  const [memberFormEmail, setMemberFormEmail] = useState("");
+  const [memberFormInitials, setMemberFormInitials] = useState("");
+  const [memberFormColor, setMemberFormColor] = useState("#001D63");
+  const [memberFormError, setMemberFormError] = useState<string | null>(null);
+  const [memberFormPending, setMemberFormPending] = useState(false);
+
+  // Effective members list (filters out optimistically deleted)
+  const effectiveMembers = data.members.filter((m) => !deletedMemberIds.has(m.id));
+
+  // ── Attribution toggles ────────────────────────────────────────────────────
   const handleTogglePhase = (phaseId: string, memberId: string) => {
     const isAssigned = localAssignees.some((a) => a.phaseId === phaseId && a.memberId === memberId);
-    // Optimistic update
     if (isAssigned) {
       setLocalAssignees((prev) => prev.filter((a) => !(a.phaseId === phaseId && a.memberId === memberId)));
     } else {
       setLocalAssignees((prev) => [...prev, { phaseId, memberId }]);
     }
-    // Server action
     startTransition(async () => {
       await togglePhaseAssignee({ phaseId, memberId, planningId: planning.id });
     });
   };
 
-  // ── Toggle all phases in a lot for a member ────────────────────────
   const handleToggleLot = (lotId: string, memberId: string) => {
     const lotPhases = phases.filter((p) => p.lotId === lotId);
     const allAssigned = lotPhases.every((p) =>
@@ -57,7 +77,6 @@ export function RessourcesClient({ data }: Props) {
     );
 
     if (allAssigned) {
-      // Unassign all phases of this lot
       setLocalAssignees((prev) =>
         prev.filter((a) => !(a.memberId === memberId && lotPhases.some((p) => p.id === a.phaseId)))
       );
@@ -67,7 +86,6 @@ export function RessourcesClient({ data }: Props) {
         }
       });
     } else {
-      // Assign missing phases
       const missing = lotPhases.filter(
         (p) => !localAssignees.some((a) => a.phaseId === p.id && a.memberId === memberId)
       );
@@ -80,8 +98,84 @@ export function RessourcesClient({ data }: Props) {
     }
   };
 
-  // ── Compute member rows from localAssignees ────────────────────────
-  const memberRows = members.map((member) => {
+  // ── Member CRUD ────────────────────────────────────────────────────────────
+  const handleOpenAdd = () => {
+    setMemberFormName("");
+    setMemberFormEmail("");
+    setMemberFormInitials("");
+    setMemberFormColor(MEMBER_COLORS[effectiveMembers.length % MEMBER_COLORS.length]);
+    setMemberFormError(null);
+    setMemberModal({ type: "add" });
+  };
+
+  const handleOpenEdit = (member: MemberRow) => {
+    setMemberFormName(member.userName);
+    setMemberFormEmail(member.userEmail);
+    setMemberFormInitials(member.initials ?? "");
+    setMemberFormColor(member.color ?? "#001D63");
+    setMemberFormError(null);
+    setMemberModal({ type: "edit", member });
+  };
+
+  const handleDelete = async (memberId: string) => {
+    if (!window.confirm("Supprimer ce responsable du planning ? Ses attributions de phases seront supprimées.")) return;
+    setDeletedMemberIds((prev) => new Set([...prev, memberId]));
+    setLocalAssignees((prev) => prev.filter((a) => a.memberId !== memberId));
+    try {
+      await removeMember(memberId, planning.id);
+      router.refresh();
+    } catch {
+      // Revert optimistic delete on error
+      setDeletedMemberIds((prev) => {
+        const next = new Set(prev);
+        next.delete(memberId);
+        return next;
+      });
+      router.refresh();
+    }
+  };
+
+  const handleSaveMember = async () => {
+    if (!memberFormName.trim()) {
+      setMemberFormError("Le nom est requis."); return;
+    }
+    if (!memberFormInitials.trim()) {
+      setMemberFormError("Les initiales sont requises."); return;
+    }
+    if (memberModal?.type === "add" && !memberFormEmail.trim()) {
+      setMemberFormError("L'email est requis."); return;
+    }
+    setMemberFormPending(true);
+    setMemberFormError(null);
+    try {
+      if (memberModal?.type === "add") {
+        await addMember({
+          planningId: planning.id,
+          name: memberFormName.trim(),
+          email: memberFormEmail.trim(),
+          initials: memberFormInitials.trim().toUpperCase().slice(0, 3),
+          color: memberFormColor,
+        });
+      } else if (memberModal?.type === "edit" && memberModal.member) {
+        await updateMember({
+          memberId: memberModal.member.id,
+          planningId: planning.id,
+          name: memberFormName.trim(),
+          initials: memberFormInitials.trim().toUpperCase().slice(0, 3),
+          color: memberFormColor,
+        });
+      }
+      setMemberModal(null);
+      router.refresh();
+    } catch (e) {
+      setMemberFormError(e instanceof Error ? e.message : "Une erreur s'est produite.");
+    } finally {
+      setMemberFormPending(false);
+    }
+  };
+
+  // ── Compute member rows ────────────────────────────────────────────────────
+  const memberRows = effectiveMembers.map((member) => {
     const assignedPhaseIds = new Set(
       localAssignees.filter((a) => a.memberId === member.id).map((a) => a.phaseId)
     );
@@ -108,15 +202,18 @@ export function RessourcesClient({ data }: Props) {
   const assignedPhaseIds = new Set(localAssignees.map((a) => a.phaseId));
   const unassigned = phases.filter((p) => !assignedPhaseIds.has(p.id));
 
-  const modalMember = modalMemberId ? members.find((m) => m.id === modalMemberId) : null;
+  const modalMember = modalMemberId ? effectiveMembers.find((m) => m.id === modalMemberId) : null;
 
   return (
     <div className={styles.page}>
       <header className={styles.header}>
         <h1 className={styles.title}>Ressources</h1>
         <span className={styles.subtitle}>
-          {planning.name} · {members.length} membre{members.length > 1 ? "s" : ""}
+          {planning.name} · {effectiveMembers.length} membre{effectiveMembers.length > 1 ? "s" : ""}
         </span>
+        <button className={styles.addMemberHeaderBtn} onClick={handleOpenAdd}>
+          + Nouveau responsable
+        </button>
       </header>
 
       {/* Member cards */}
@@ -125,10 +222,7 @@ export function RessourcesClient({ data }: Props) {
           <div key={member.id} className={styles.memberCard}>
             {/* Member header */}
             <div className={styles.memberHeader}>
-              <div
-                className={styles.avatar}
-                style={{ background: member.color ?? "#001D63" }}
-              >
+              <div className={styles.avatar} style={{ background: member.color ?? "#001D63" }}>
                 {(member.initials ?? member.userName.slice(0, 2)).toUpperCase()}
               </div>
               <div className={styles.memberInfo}>
@@ -139,13 +233,29 @@ export function RessourcesClient({ data }: Props) {
                 <span className={styles.memberCount}>{total}</span>
                 <span className={styles.memberCountLabel}>phases</span>
               </div>
-              <button
-                className={styles.attributeBtn}
-                onClick={() => setModalMemberId(member.id)}
-                title={`Attribuer des phases à ${member.userName}`}
-              >
-                Attribuer
-              </button>
+              <div className={styles.memberActions}>
+                <button
+                  className={styles.attributeBtn}
+                  onClick={() => setModalMemberId(member.id)}
+                  title={`Attribuer des phases à ${member.userName}`}
+                >
+                  Attribuer
+                </button>
+                <button
+                  className={styles.memberEditBtn}
+                  onClick={() => handleOpenEdit(member)}
+                  title="Modifier ce responsable"
+                >
+                  ✎
+                </button>
+                <button
+                  className={styles.memberDeleteBtn}
+                  onClick={() => handleDelete(member.id)}
+                  title="Supprimer ce responsable"
+                >
+                  ×
+                </button>
+              </div>
             </div>
 
             {/* Phases by domain */}
@@ -198,6 +308,12 @@ export function RessourcesClient({ data }: Props) {
             )}
           </div>
         ))}
+
+        {effectiveMembers.length === 0 && (
+          <div className={styles.noMembersEmpty}>
+            <p>Aucun responsable. Cliquez sur &quot;+ Nouveau responsable&quot; pour commencer.</p>
+          </div>
+        )}
       </div>
 
       {/* Unassigned phases summary */}
@@ -237,34 +353,21 @@ export function RessourcesClient({ data }: Props) {
       {modalMember && (
         <div className={styles.modalOverlay} onClick={() => setModalMemberId(null)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            {/* Modal header */}
             <div className={styles.modalHeader}>
-              <div
-                className={styles.modalAvatar}
-                style={{ background: modalMember.color ?? "#001D63" }}
-              >
+              <div className={styles.modalAvatar} style={{ background: modalMember.color ?? "#001D63" }}>
                 {(modalMember.initials ?? modalMember.userName.slice(0, 2)).toUpperCase()}
               </div>
               <div className={styles.modalHeaderInfo}>
                 <span className={styles.modalHeaderName}>{modalMember.userName}</span>
                 <span className={styles.modalHeaderSub}>Attribution des phases</span>
               </div>
-              <button
-                className={styles.modalCloseBtn}
-                onClick={() => setModalMemberId(null)}
-                aria-label="Fermer"
-              >
-                ×
-              </button>
+              <button className={styles.modalCloseBtn} onClick={() => setModalMemberId(null)} aria-label="Fermer">×</button>
             </div>
 
-            {/* Modal body */}
             <div className={styles.modalBody}>
               {domains.map((domain) => {
                 const domainLots = lots.filter((l) => l.domainId === domain.id);
-                const domainPhases = phases.filter((p) =>
-                  domainLots.some((l) => l.id === p.lotId)
-                );
+                const domainPhases = phases.filter((p) => domainLots.some((l) => l.id === p.lotId));
                 if (domainPhases.length === 0) return null;
 
                 return (
@@ -338,13 +441,134 @@ export function RessourcesClient({ data }: Props) {
               })}
             </div>
 
-            {/* Modal footer */}
             <div className={styles.modalFooter}>
               <span className={styles.modalCount}>
                 {localAssignees.filter((a) => a.memberId === modalMember.id).length} phase{localAssignees.filter((a) => a.memberId === modalMember.id).length > 1 ? "s" : ""} assignée{localAssignees.filter((a) => a.memberId === modalMember.id).length > 1 ? "s" : ""}
               </span>
-              <button className={styles.modalCloseFooterBtn} onClick={() => setModalMemberId(null)}>
-                Fermer
+              <button className={styles.modalCloseFooterBtn} onClick={() => setModalMemberId(null)}>Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Member add/edit modal */}
+      {memberModal && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => !memberFormPending && setMemberModal(null)}
+        >
+          <div
+            className={styles.modal}
+            style={{ maxWidth: 480 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className={styles.modalHeader}>
+              <div
+                className={styles.modalAvatar}
+                style={{ background: memberFormColor }}
+              >
+                {memberFormInitials.slice(0, 3).toUpperCase() || "?"}
+              </div>
+              <div className={styles.modalHeaderInfo}>
+                <span className={styles.modalHeaderName}>
+                  {memberModal.type === "add" ? "Nouveau responsable" : "Modifier le responsable"}
+                </span>
+                <span className={styles.modalHeaderSub}>{planning.name}</span>
+              </div>
+              <button
+                className={styles.modalCloseBtn}
+                onClick={() => !memberFormPending && setMemberModal(null)}
+                aria-label="Fermer"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Form body */}
+            <div className={styles.memberFormBody}>
+              <div className={styles.memberFormRow}>
+                <label className={styles.memberFormLabel}>Nom complet *</label>
+                <input
+                  type="text"
+                  className={styles.memberFormInput}
+                  value={memberFormName}
+                  onChange={(e) => setMemberFormName(e.target.value)}
+                  placeholder="Prénom Nom"
+                  autoFocus
+                />
+              </div>
+              {memberModal.type === "add" && (
+                <div className={styles.memberFormRow}>
+                  <label className={styles.memberFormLabel}>Email *</label>
+                  <input
+                    type="email"
+                    className={styles.memberFormInput}
+                    value={memberFormEmail}
+                    onChange={(e) => setMemberFormEmail(e.target.value)}
+                    placeholder="prenom.nom@exemple.com"
+                  />
+                </div>
+              )}
+              <div className={styles.memberFormRow}>
+                <label className={styles.memberFormLabel}>Initiales *</label>
+                <input
+                  type="text"
+                  className={styles.memberFormInput}
+                  value={memberFormInitials}
+                  onChange={(e) => setMemberFormInitials(e.target.value.toUpperCase().slice(0, 3))}
+                  placeholder="AB"
+                  maxLength={3}
+                  style={{ textTransform: "uppercase", maxWidth: 72 }}
+                />
+              </div>
+              <div className={styles.memberFormRow}>
+                <label className={styles.memberFormLabel}>Couleur</label>
+                <div className={styles.memberFormColorRow}>
+                  <input
+                    type="color"
+                    value={memberFormColor}
+                    onChange={(e) => setMemberFormColor(e.target.value)}
+                    style={{ width: 36, height: 36, borderRadius: 8, border: "2px solid var(--klint-line)", cursor: "pointer", padding: 2, background: "none" }}
+                  />
+                  <div className={styles.memberFormColorPalette}>
+                    {MEMBER_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => setMemberFormColor(c)}
+                        style={{
+                          width: 22, height: 22, borderRadius: 6,
+                          background: c, border: memberFormColor === c ? "2px solid #001036" : "2px solid transparent",
+                          cursor: "pointer", padding: 0, flexShrink: 0,
+                        }}
+                        aria-label={c}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {memberFormError && (
+                <p className={styles.memberFormError}>{memberFormError}</p>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.modalCloseFooterBtn}
+                onClick={() => setMemberModal(null)}
+                disabled={memberFormPending}
+              >
+                Annuler
+              </button>
+              <button
+                className={styles.memberFormSaveBtn}
+                onClick={handleSaveMember}
+                disabled={memberFormPending}
+              >
+                {memberFormPending
+                  ? "Enregistrement…"
+                  : memberModal.type === "add" ? "Ajouter" : "Enregistrer"}
               </button>
             </div>
           </div>

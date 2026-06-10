@@ -428,9 +428,6 @@
   font-size: var(--text-13);
   font-weight: var(--weight-semibold);
   color: var(--klint-navy);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .modalLotCount {
@@ -515,9 +512,6 @@
   font-size: var(--text-12);
   font-weight: var(--weight-medium);
   color: var(--klint-navy);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .modalPhaseDates {
@@ -554,3 +548,157 @@
   transition: background 120ms;
 }
 .modalCloseFooterBtn:hover { background: var(--klint-paper); }
+
+/* ── Header "Nouveau responsable" button ── */
+.addMemberHeaderBtn {
+  margin-left: auto;
+  padding: 7px 16px;
+  border-radius: var(--radius-btn, 8px);
+  border: 1.5px solid var(--klint-navy);
+  background: transparent;
+  color: var(--klint-navy);
+  font-size: var(--text-13);
+  font-weight: var(--weight-semibold);
+  font-family: var(--font-display);
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+  flex-shrink: 0;
+}
+.addMemberHeaderBtn:hover {
+  background: var(--klint-navy);
+  color: white;
+}
+
+/* ── Member card action buttons (edit + delete) ── */
+.memberActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.memberEditBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--klint-line);
+  background: var(--klint-paper);
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 100ms, color 100ms, border-color 100ms;
+  flex-shrink: 0;
+}
+.memberEditBtn:hover {
+  background: var(--klint-navy);
+  color: white;
+  border-color: var(--klint-navy);
+}
+
+.memberDeleteBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--klint-line);
+  background: var(--klint-paper);
+  color: #9ca3af;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 100ms, color 100ms, border-color 100ms;
+  flex-shrink: 0;
+}
+.memberDeleteBtn:hover {
+  background: #FEE2E2;
+  color: #DC2626;
+  border-color: #FECACA;
+}
+
+/* ── Empty state ── */
+.noMembersEmpty {
+  padding: 36px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: var(--text-13);
+  background: var(--klint-white);
+  border-radius: var(--radius-card);
+  border: 1px dashed var(--klint-line);
+}
+
+/* ── Member add/edit form modal ── */
+.memberFormBody {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.memberFormRow {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.memberFormLabel {
+  font-size: var(--text-12);
+  font-weight: var(--weight-semibold);
+  color: #6b7280;
+}
+
+.memberFormInput {
+  border: 1px solid var(--klint-line);
+  border-radius: var(--radius-input, 8px);
+  padding: 8px 11px;
+  font-size: var(--text-13);
+  font-family: var(--font-display);
+  color: var(--klint-navy);
+  background: var(--klint-white);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 120ms;
+}
+.memberFormInput:focus { border-color: var(--klint-navy); }
+
+.memberFormColorRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.memberFormColorPalette {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.memberFormError {
+  font-size: var(--text-12);
+  color: #DC2626;
+  margin: 0;
+  padding: 6px 10px;
+  background: #FEE2E2;
+  border-radius: 6px;
+}
+
+.memberFormSaveBtn {
+  padding: 7px 20px;
+  border-radius: var(--radius-btn, 8px);
+  border: none;
+  background: var(--klint-navy);
+  color: white;
+  font-size: var(--text-13);
+  font-weight: var(--weight-semibold);
+  font-family: var(--font-display);
+  cursor: pointer;
+  transition: opacity 120ms, background 120ms;
+}
+.memberFormSaveBtn:hover { background: #002070; }
+.memberFormSaveBtn:disabled { opacity: 0.45; cursor: not-allowed; }

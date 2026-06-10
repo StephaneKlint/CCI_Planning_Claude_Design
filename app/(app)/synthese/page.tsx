@@ -18,7 +18,13 @@ function verbLabel(verb: string) {
   return map[verb] ?? verb;
 }
 
-export default async function SynthesePage() {
+interface Props {
+  searchParams: Promise<{ planningId?: string }>;
+}
+
+export default async function SynthesePage({ searchParams }: Props) {
+  const { planningId: qPlanningId } = await searchParams;
+
   const planningList = await listPlannings();
   if (!planningList.length) {
     return (
@@ -28,7 +34,8 @@ export default async function SynthesePage() {
     );
   }
 
-  const data = await getGanttData(planningList[0].id);
+  const planningId = qPlanningId ?? planningList[0].id;
+  const data = await getGanttData(planningId);
   if (!data) return <div className={styles.empty}>Données introuvables.</div>;
 
   const { planning, domains, lots, phases, milestones } = data;

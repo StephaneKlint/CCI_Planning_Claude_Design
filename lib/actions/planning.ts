@@ -204,6 +204,70 @@ export async function bulkUpdatePhaseStatus(input: z.infer<typeof BulkUpdateStat
 }
 
 // ---------------------------------------------------------------------------
+// Lot creation
+// ---------------------------------------------------------------------------
+
+const CreateLotSchema = z.object({
+  planningId: z.string().uuid(),
+  domainId:   z.string().uuid(),
+  name:       z.string().min(1).max(160),
+  subtitle:   z.string().max(500).nullable().optional(),
+});
+
+export async function createLot(input: z.infer<typeof CreateLotSchema>) {
+  const data = CreateLotSchema.parse(input);
+  await assertCanEdit(data.planningId);
+
+  const [newLot] = await db.insert(lots).values({
+    planningId: data.planningId,
+    domainId:   data.domainId,
+    name:       data.name,
+    subtitle:   data.subtitle ?? null,
+    sortOrder:  999,
+  }).returning({ id: lots.id, name: lots.name });
+
+  await logActivity(data.planningId, "created", "lot", newLot.id, `Nouveau projet : ${data.name}`);
+  revalidatePath(`/p/${data.planningId}`);
+  return newLot;
+}
+
+// ---------------------------------------------------------------------------
+// Phase creation
+// ---------------------------------------------------------------------------
+
+const CreatePhaseSchema = z.object({
+  planningId: z.string().uuid(),
+  lotId:      z.string().uuid(),
+  type:       z.string().min(1).max(40),
+  label:      z.string().max(200).nullable().optional(),
+  startDate:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  endDate:    z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+export async function createPhase(input: z.infer<typeof CreatePhaseSchema>) {
+  const data = CreatePhaseSchema.parse(input);
+  await assertCanEdit(data.planningId);
+
+  if (data.startDate > data.endDate) {
+    throw new Error("La date de début doit être avant la date de fin.");
+  }
+
+  const [newPhase] = await db.insert(phases).values({
+    lotId:     data.lotId,
+    type:      data.type,
+    label:     data.label ?? null,
+    startDate: data.startDate,
+    endDate:   data.endDate,
+    progress:  0,
+    sortOrder: 999,
+  }).returning({ id: phases.id, type: phases.type });
+
+  await logActivity(data.planningId, "created", "phase", newPhase.id, `Nouvelle phase : ${data.label ?? data.type}`);
+  revalidatePath(`/p/${data.planningId}`);
+  return newPhase;
+}
+
+// ---------------------------------------------------------------------------
 // Lot mutations
 // ---------------------------------------------------------------------------
 

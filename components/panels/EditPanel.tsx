@@ -4,6 +4,7 @@
  * Champs : Type, Libellé, Début, Fin, Statut, Avancement, Couleur, Assignés, Note.
  */
 import { useTransition, useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useGanttStore } from "@/store/ganttStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { Icon } from "@/components/ui/Icon";
@@ -14,6 +15,7 @@ import {
   updatePhaseStatus, updatePhaseProgress, updatePhaseNote,
   updatePhaseDates, updatePhaseColor, updatePhaseLabel,
   updateMilestone, togglePhaseAssignee,
+  createLot, createPhase,
 } from "@/lib/actions/planning";
 import { useOptimisticPhase, planningQueryKey } from "@/lib/queries/usePlanning";
 import styles from "./EditPanel.module.css";
@@ -48,11 +50,21 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
   const [saved, setSaved] = useState(false);
   const patchPhase = useOptimisticPhase();
   const qc = useQueryClient();
+  const router = useRouter();
 
   // Assignées dropdown state
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
   const [assigneeSearch, setAssigneeSearch] = useState("");
   const assigneeWrapperRef = useRef<HTMLDivElement>(null);
+
+  // Create mode form state
+  const [createName, setCreateName] = useState("");
+  const [createSubtitle, setCreateSubtitle] = useState("");
+  const [createPhaseType, setCreatePhaseType] = useState("cadrage");
+  const [createPhaseLabel, setCreatePhaseLabel] = useState("");
+  const [createPhaseStart, setCreatePhaseStart] = useState("");
+  const [createPhaseEnd, setCreatePhaseEnd] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -67,10 +79,17 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
     return () => document.removeEventListener("mousedown", handler);
   }, [showAssigneeDropdown]);
 
-  // Reset dropdown when switching edit target
+  // Reset all transient state when switching edit target
   useEffect(() => {
     setShowAssigneeDropdown(false);
     setAssigneeSearch("");
+    setCreateName("");
+    setCreateSubtitle("");
+    setCreatePhaseType("cadrage");
+    setCreatePhaseLabel("");
+    setCreatePhaseStart("");
+    setCreatePhaseEnd("");
+    setCreateError(null);
   }, [editTarget]);
 
   if (!editTarget) return null;
@@ -695,6 +714,194 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
 
         <div className={styles.footer}>
           <Button variant="ghost" size="sm" onClick={closeEdit}>Fermer</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────── MODE CREATE-LOT ────────────────────────────
+  if (editTarget.kind === "create-lot") {
+    const domain = data.domains.find((d) => d.id === editTarget.domainId);
+
+    const handleCreate = () => {
+      if (!createName.trim()) { setCreateError("Le nom du projet est requis."); return; }
+      setCreateError(null);
+      startTransition(async () => {
+        try {
+          await createLot({
+            planningId,
+            domainId: editTarget.domainId,
+            name: createName.trim(),
+            subtitle: createSubtitle.trim() || undefined,
+          });
+          closeEdit();
+          router.refresh();
+        } catch (e) {
+          setCreateError(e instanceof Error ? e.message : "Erreur lors de la création.");
+        }
+      });
+    };
+
+    return (
+      <div className={styles.panel} role="dialog" aria-label="Nouveau projet">
+        <div className={styles.header}>
+          <div className={styles.headerLeft}>
+            <span className={styles.modeTag} style={{ background: "#F0FDF4", color: "#16A34A" }}>+ Projet</span>
+            {domain && (
+              <span className={styles.domainChip} style={{ background: domain.bg, color: domain.strong }}>
+                {domain.name}
+              </span>
+            )}
+          </div>
+          <button className={styles.closeBtn} onClick={closeEdit}><Icon name="close" size={14} /></button>
+        </div>
+        <div className={styles.titleRow}>
+          <h2 className={styles.title}>Nouveau projet</h2>
+        </div>
+        <div className={styles.body}>
+          <div className={styles.fieldRow}>
+            <span className={styles.fieldLabel}>Nom *</span>
+            <input
+              type="text"
+              className={styles.input}
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+              placeholder="Nom du projet…"
+              autoFocus
+              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+            />
+          </div>
+          <div className={styles.fieldRow}>
+            <span className={styles.fieldLabel}>Description</span>
+            <input
+              type="text"
+              className={styles.input}
+              value={createSubtitle}
+              onChange={(e) => setCreateSubtitle(e.target.value)}
+              placeholder="Sous-titre optionnel…"
+            />
+          </div>
+          {createError && (
+            <p style={{ color: "#DC2626", fontSize: 12, margin: 0 }}>{createError}</p>
+          )}
+        </div>
+        <div className={styles.footer}>
+          <Button variant="ghost" size="sm" onClick={closeEdit}>Annuler</Button>
+          <button
+            className={styles.createSubmitBtn}
+            onClick={handleCreate}
+            disabled={isPending || !createName.trim()}
+          >
+            {isPending ? "Création…" : "Créer le projet"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────── MODE CREATE-PHASE ────────────────────────────
+  if (editTarget.kind === "create-phase") {
+    const lot = data.lots.find((l) => l.id === editTarget.lotId);
+    const domain = lot ? data.domains.find((d) => d.id === lot.domainId) : null;
+
+    const handleCreate = () => {
+      if (!createPhaseStart || !createPhaseEnd) {
+        setCreateError("Les dates de début et de fin sont requises."); return;
+      }
+      if (createPhaseStart > createPhaseEnd) {
+        setCreateError("La date de début doit précéder la date de fin."); return;
+      }
+      setCreateError(null);
+      startTransition(async () => {
+        try {
+          await createPhase({
+            planningId,
+            lotId: editTarget.lotId,
+            type: createPhaseType,
+            label: createPhaseLabel.trim() || undefined,
+            startDate: createPhaseStart,
+            endDate: createPhaseEnd,
+          });
+          closeEdit();
+          router.refresh();
+        } catch (e) {
+          setCreateError(e instanceof Error ? e.message : "Erreur lors de la création.");
+        }
+      });
+    };
+
+    return (
+      <div className={styles.panel} role="dialog" aria-label="Nouvelle phase">
+        <div className={styles.header}>
+          <div className={styles.headerLeft}>
+            <span className={styles.modeTag} style={{ background: "#EEF2FF", color: "#4338CA" }}>+ Phase</span>
+            {domain && (
+              <span className={styles.domainChip} style={{ background: domain.bg, color: domain.strong }}>
+                {domain.name}
+              </span>
+            )}
+          </div>
+          <button className={styles.closeBtn} onClick={closeEdit}><Icon name="close" size={14} /></button>
+        </div>
+        <div className={styles.titleRow}>
+          <h2 className={styles.title}>{lot?.name ?? "Nouvelle phase"}</h2>
+          {lot?.subtitle && <p className={styles.lotSubtitle}>{lot.subtitle}</p>}
+        </div>
+        <div className={styles.body}>
+          <div className={styles.fieldRow}>
+            <span className={styles.fieldLabel}>Type</span>
+            <select
+              className={styles.select}
+              value={createPhaseType}
+              onChange={(e) => setCreatePhaseType(e.target.value)}
+            >
+              {Object.entries(PHASE_TYPE_LABELS).map(([code, label]) => (
+                <option key={code} value={code}>{label}</option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.fieldRow}>
+            <span className={styles.fieldLabel}>Libellé</span>
+            <input
+              type="text"
+              className={styles.input}
+              value={createPhaseLabel}
+              onChange={(e) => setCreatePhaseLabel(e.target.value)}
+              placeholder="Libellé optionnel…"
+            />
+          </div>
+          <div className={styles.fieldRow}>
+            <span className={styles.fieldLabel}>Début *</span>
+            <input
+              type="date"
+              className={styles.dateInput}
+              value={createPhaseStart}
+              onChange={(e) => setCreatePhaseStart(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className={styles.fieldRow}>
+            <span className={styles.fieldLabel}>Fin *</span>
+            <input
+              type="date"
+              className={styles.dateInput}
+              value={createPhaseEnd}
+              onChange={(e) => setCreatePhaseEnd(e.target.value)}
+            />
+          </div>
+          {createError && (
+            <p style={{ color: "#DC2626", fontSize: 12, margin: 0 }}>{createError}</p>
+          )}
+        </div>
+        <div className={styles.footer}>
+          <Button variant="ghost" size="sm" onClick={closeEdit}>Annuler</Button>
+          <button
+            className={styles.createSubmitBtn}
+            onClick={handleCreate}
+            disabled={isPending || !createPhaseStart || !createPhaseEnd}
+          >
+            {isPending ? "Création…" : "Créer la phase"}
+          </button>
         </div>
       </div>
     );

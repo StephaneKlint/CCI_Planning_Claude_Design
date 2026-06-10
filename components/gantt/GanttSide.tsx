@@ -8,6 +8,7 @@ import type { RowEntry } from "./types";
 import type { DomainRow, LotRow } from "@/lib/db/queries";
 import { Donut } from "@/components/ui/Donut";
 import type { StatusCode } from "@/components/ui/StatusPill";
+import { useGanttStore } from "@/store/ganttStore";
 import styles from "./GanttSide.module.css";
 
 interface GanttSideProps {
@@ -36,6 +37,7 @@ export function GanttSide({
   width = 340,
   innerRef,
 }: GanttSideProps) {
+  const { openEdit } = useGanttStore();
   const domainById = Object.fromEntries(domains.map((d) => [d.id, d]));
   const lotById = Object.fromEntries(lots.map((l) => [l.id, l]));
 
@@ -73,6 +75,15 @@ export function GanttSide({
                   }}
                 >
                   <span className={styles.domainName}>{domain.name}</span>
+                  <button
+                    className={styles.addBtn}
+                    onClick={(e) => { e.stopPropagation(); openEdit({ kind: "create-lot", domainId: row.id }); }}
+                    title="Ajouter un projet dans ce domaine"
+                    aria-label="Ajouter un projet"
+                    style={{ color: domain.strong, borderColor: domain.strong + "44" }}
+                  >
+                    +
+                  </button>
                 </div>
               );
             }
@@ -102,6 +113,14 @@ export function GanttSide({
                     <span className={styles.lotSubtitle}>{lot.subtitle}</span>
                   )}
                 </div>
+                <button
+                  className={styles.addPhaseBtn}
+                  onClick={(e) => { e.stopPropagation(); openEdit({ kind: "create-phase", lotId: row.id }); }}
+                  title="Ajouter une phase à ce projet"
+                  aria-label="Ajouter une phase"
+                >
+                  +
+                </button>
               </div>
             );
           })}

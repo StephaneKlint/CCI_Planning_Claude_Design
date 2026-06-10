@@ -97,3 +97,57 @@
   text-overflow: ellipsis;
   line-height: 1.2;
 }
+
+/* ── "+" buttons ── */
+.addBtn {
+  margin-left: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid currentColor;
+  background: rgba(255,255,255,0.25);
+  color: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 140ms, background 100ms;
+  padding: 0;
+  flex-shrink: 0;
+}
+.domainHead:hover .addBtn {
+  opacity: 1;
+}
+.addBtn:hover {
+  background: rgba(255,255,255,0.45);
+}
+
+.addPhaseBtn {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px dashed var(--klint-line, #E6E8EE);
+  background: transparent;
+  color: #9CA3AF;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 140ms, border-color 100ms, color 100ms;
+  padding: 0;
+  flex-shrink: 0;
+}
+.lotRow:hover .addPhaseBtn {
+  opacity: 1;
+}
+.addPhaseBtn:hover {
+  border-color: var(--klint-navy, #001036);
+  color: var(--klint-navy, #001036);
+  border-style: solid;
+}

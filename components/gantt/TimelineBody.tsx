@@ -80,15 +80,20 @@ export function TimelineBody({
   const phaseLabel = (phase: PhaseRow) =>
     phase.label ?? PHASE_TYPE_LABELS[phase.type] ?? phase.type;
 
-  const phasesByLot = phases.reduce<Record<string, PhaseRow[]>>((acc, p) => {
-    (acc[p.lotId] ??= []).push(p);
-    return acc;
-  }, {});
+  // Only render phases/milestones that overlap [viewStart, viewEnd]
+  const phasesByLot = phases
+    .filter((p) => p.startDate <= viewEnd && p.endDate >= viewStart)
+    .reduce<Record<string, PhaseRow[]>>((acc, p) => {
+      (acc[p.lotId] ??= []).push(p);
+      return acc;
+    }, {});
 
-  const milestonesByLot = milestones.reduce<Record<string, MilestoneRow[]>>((acc, m) => {
-    (acc[m.lotId] ??= []).push(m);
-    return acc;
-  }, {});
+  const milestonesByLot = milestones
+    .filter((m) => m.date >= viewStart && m.date <= viewEnd)
+    .reduce<Record<string, MilestoneRow[]>>((acc, m) => {
+      (acc[m.lotId] ??= []).push(m);
+      return acc;
+    }, {});
 
   const weekendBands = showWeekends ? buildWeekendBands(viewStart, viewEnd, ppd) : [];
   const todayX = xOf(referenceDate, viewStart, ppd);
