@@ -6,7 +6,12 @@ import { SessionProvider } from "@/providers/SessionProvider";
 export const metadata: Metadata = {
   title: "Klint Planning",
   description: "Outil de planning de projets — Klint Consulting",
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+  // /api/favicon sert le favicon custom (DB) ou redirige vers /favicon.svg par défaut
+  icons: {
+    icon:      [{ url: "/api/favicon" }, { url: "/favicon.svg" }],
+    shortcut:  "/api/favicon",
+    apple:     "/api/favicon",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

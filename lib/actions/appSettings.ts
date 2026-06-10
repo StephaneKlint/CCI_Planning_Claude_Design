@@ -1,7 +1,7 @@
 "use server";
 /**
  * lib/actions/appSettings.ts
- * Gestion des paramètres globaux de l'application (logo, etc.)
+ * Gestion des paramètres globaux de l'application (logo, favicon)
  * Table singleton : clé = "global"
  */
 import { revalidatePath } from "next/cache";
@@ -12,22 +12,28 @@ import { eq } from "drizzle-orm";
 const GLOBAL_KEY = "global";
 
 export type AppSettings = {
-  logoDataUrl: string | null;
-  logoAlt: string;
+  logoDataUrl:    string | null;
+  logoAlt:        string;
+  faviconDataUrl: string | null;
 };
 
-/** Retourne les paramètres globaux (peut être null si jamais initialisé) */
+/** Retourne les paramètres globaux */
 export async function getAppSettings(): Promise<AppSettings> {
   const rows = await db
-    .select({ logoDataUrl: appSettings.logoDataUrl, logoAlt: appSettings.logoAlt })
+    .select({
+      logoDataUrl:    appSettings.logoDataUrl,
+      logoAlt:        appSettings.logoAlt,
+      faviconDataUrl: appSettings.faviconDataUrl,
+    })
     .from(appSettings)
     .where(eq(appSettings.key, GLOBAL_KEY))
     .limit(1);
 
-  if (rows.length === 0) return { logoDataUrl: null, logoAlt: "Klint" };
+  if (rows.length === 0) return { logoDataUrl: null, logoAlt: "Klint", faviconDataUrl: null };
   return {
-    logoDataUrl: rows[0].logoDataUrl ?? null,
-    logoAlt: rows[0].logoAlt ?? "Klint",
+    logoDataUrl:    rows[0].logoDataUrl    ?? null,
+    logoAlt:        rows[0].logoAlt        ?? "Klint",
+    faviconDataUrl: rows[0].faviconDataUrl ?? null,
   };
 }
 
@@ -42,5 +48,19 @@ export async function saveAppLogo(logoDataUrl: string | null, logoAlt: string) {
     });
 
   // Invalide le layout entier (Rail est dans le layout)
+  revalidatePath("/", "layout");
+}
+
+/** Sauvegarde le favicon (dataUrl = null pour revenir au favicon par défaut) */
+export async function saveAppFavicon(faviconDataUrl: string | null) {
+  await db
+    .insert(appSettings)
+    .values({ key: GLOBAL_KEY, faviconDataUrl, logoAlt: "Klint" })
+    .onConflictDoUpdate({
+      target: appSettings.key,
+      set: { faviconDataUrl },
+    });
+
+  // Le favicon est dans le <head> du layout racine
   revalidatePath("/", "layout");
 }

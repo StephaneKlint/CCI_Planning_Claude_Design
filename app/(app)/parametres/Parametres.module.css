@@ -466,3 +466,71 @@
   font-family: var(--font-display);
   white-space: nowrap;
 }
+
+/* ─── Upload label (remplace button + programmatic click) ──────────────── */
+/*
+  Utilisation : <label htmlFor="file-input-id" className={styles.uploadLabel}>
+  Déclenche nativement le file picker sur tous les navigateurs (iOS Safari inclus).
+  display:none sur l'input reste valide avec cette approche.
+*/
+.uploadLabel {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.uploadLabelDisabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* ─── Hints et messages ─────────────────────────────────────────────────── */
+.unsavedHint {
+  font-size: var(--text-12);
+  color: #B45309;
+  background: #FEF3C7;
+  border: 1px solid #FDE68A;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 6px 0 0;
+}
+
+.savedMsg {
+  font-size: var(--text-12);
+  color: #16A34A;
+  margin: 6px 0 0;
+}
+
+/* ─── Favicon preview ───────────────────────────────────────────────────── */
+.faviconPreviewBox {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-input);
+  border: 1.5px solid var(--klint-line);
+  background: #F8FAFC;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  gap: 2px;
+  position: relative;
+}
+
+.faviconPreviewImg {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.faviconLabel {
+  font-size: 9px;
+  font-weight: 600;
+  color: #9CA3AF;
+  letter-spacing: 0.04em;
+  position: absolute;
+  bottom: 3px;
+}

@@ -10,7 +10,7 @@ import {
   addMilestoneType, deleteMilestoneType, updateMilestoneType,
   updateDomainCadence, updatePlanningSettings, updateMemberPermission,
 } from "@/lib/actions/settings";
-import { saveAppLogo } from "@/lib/actions/appSettings";
+import { saveAppLogo, saveAppFavicon } from "@/lib/actions/appSettings";
 
 type Tab = "general" | "cadence" | "phases" | "jalons" | "statuts" | "membres" | "apparence";
 
@@ -46,12 +46,20 @@ export function ParametresTabs({ data, appCfg }: { data: GanttData; appCfg: AppS
   const [isPending, startTransition] = useTransition();
   const { planning, settings, domains, phaseTypes, milestoneTypes, statuses, members } = data;
 
-  // Logo upload state
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(appCfg.logoDataUrl ?? null);
-  const [logoAlt, setLogoAlt] = useState(appCfg.logoAlt || "Klint");
-  const [logoSaving, setLogoSaving] = useState(false);
-  const [logoMsg, setLogoMsg] = useState<string | null>(null);
+  // ── Logo upload state ──────────────────────────────────────────────────
+  const logoInputRef    = useRef<HTMLInputElement>(null);
+  const [logoPreview,   setLogoPreview]   = useState<string | null>(appCfg.logoDataUrl ?? null);
+  const [logoAlt,       setLogoAlt]       = useState(appCfg.logoAlt || "Klint");
+  const [logoUnsaved,   setLogoUnsaved]   = useState(false);   // fichier sélectionné mais pas encore enregistré
+  const [logoSaving,    setLogoSaving]    = useState(false);
+  const [logoMsg,       setLogoMsg]       = useState<string | null>(null);
+
+  // ── Favicon upload state ─────────────────────────────────────────────
+  const faviconInputRef   = useRef<HTMLInputElement>(null);
+  const [faviconPreview,  setFaviconPreview]   = useState<string | null>(appCfg.faviconDataUrl ?? null);
+  const [faviconUnsaved,  setFaviconUnsaved]   = useState(false);
+  const [faviconSaving,   setFaviconSaving]    = useState(false);
+  const [faviconMsg,      setFaviconMsg]       = useState<string | null>(null);
 
   // Phase type form state
   const [newPTCode, setNewPTCode] = useState("");
@@ -497,11 +505,14 @@ export function ParametresTabs({ data, appCfg }: { data: GanttData; appCfg: AppS
         </div>
       )}
 
-      {/* ── Apparence (Logo) ─────────────────────────────────────── */}
+      {/* ── Apparence (Logo + Favicon) ────────────────────────────── */}
       {active === "apparence" && (
         <div className={styles.tabPanel}>
+
+          {/* ─── Logo ─────────────────────────────────────────────────── */}
           <p className={styles.tabDesc}>
-            Personnalisez le logo affiché dans la barre de navigation (Rail). Format recommandé : PNG ou SVG carré, fond transparent. Taille max : 200 Ko.
+            <strong>Logo dans la barre de navigation.</strong> Format recommandé&nbsp;: PNG ou SVG carré,
+            fond transparent. Taille max&nbsp;: 200&nbsp;Ko.
           </p>
 
           <div className={styles.logoSection}>
@@ -518,7 +529,7 @@ export function ParametresTabs({ data, appCfg }: { data: GanttData; appCfg: AppS
               )}
             </div>
 
-            {/* Contrôles */}
+            {/* Contrôles logo */}
             <div className={styles.logoControls}>
               <div className={styles.field}>
                 <span className={styles.fieldLabel}>Texte alternatif</span>
@@ -526,47 +537,36 @@ export function ParametresTabs({ data, appCfg }: { data: GanttData; appCfg: AppS
                   type="text"
                   className={styles.addInput}
                   value={logoAlt}
-                  onChange={(e) => setLogoAlt(e.target.value)}
+                  onChange={(e) => { setLogoAlt(e.target.value); setLogoUnsaved(true); }}
                   placeholder="ex. Mon Entreprise"
                   maxLength={100}
                 />
               </div>
 
               <div className={styles.logoButtonRow}>
-                <button
-                  className={styles.addBtn}
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={logoSaving}
+                {/*
+                  ⚠️  On utilise <label> au lieu de button + fileRef.click() :
+                  la technique label/htmlFor est la seule garantie cross-browser
+                  (Chrome, Safari iOS, Firefox, Edge) pour déclencher le file picker.
+                */}
+                <label
+                  htmlFor="logo-file-input"
+                  className={`${styles.addBtn} ${styles.uploadLabel} ${logoSaving ? styles.uploadLabelDisabled : ""}`}
+                  aria-disabled={logoSaving}
                 >
                   {logoPreview ? "Changer le logo" : "Choisir un logo…"}
-                </button>
+                </label>
 
-                {logoPreview && (
-                  <button
-                    className={`${styles.deleteRowBtn} ${styles.logoResetBtn}`}
-                    onClick={async () => {
-                      setLogoSaving(true);
-                      await saveAppLogo(null, "Klint");
-                      setLogoPreview(null);
-                      setLogoAlt("Klint");
-                      setLogoMsg("Logo réinitialisé.");
-                      setLogoSaving(false);
-                      router.refresh();
-                      setTimeout(() => setLogoMsg(null), 3000);
-                    }}
-                    disabled={logoSaving}
-                  >
-                    Réinitialiser (logo Klint)
-                  </button>
-                )}
-
-                {logoPreview && (
+                {/* Enregistrer — visible dès qu'il y a un logo (sélectionné ou déjà sauvé) */}
+                {(logoPreview || logoUnsaved) && (
                   <button
                     className={styles.saveBtn}
                     onClick={async () => {
+                      if (!logoPreview) return;
                       setLogoSaving(true);
                       await saveAppLogo(logoPreview, logoAlt || "Klint");
                       setLogoMsg("Logo enregistré ✓");
+                      setLogoUnsaved(false);
                       setLogoSaving(false);
                       router.refresh();
                       setTimeout(() => setLogoMsg(null), 3000);
@@ -576,32 +576,180 @@ export function ParametresTabs({ data, appCfg }: { data: GanttData; appCfg: AppS
                     {logoSaving ? "Enregistrement…" : "Enregistrer"}
                   </button>
                 )}
+
+                {/* Réinitialiser — visible quand un logo custom est présent */}
+                {logoPreview && (
+                  <button
+                    className={`${styles.deleteRowBtn} ${styles.logoResetBtn}`}
+                    onClick={async () => {
+                      setLogoSaving(true);
+                      await saveAppLogo(null, "Klint");
+                      setLogoPreview(null);
+                      setLogoAlt("Klint");
+                      setLogoUnsaved(false);
+                      setLogoMsg("Logo réinitialisé.");
+                      setLogoSaving(false);
+                      router.refresh();
+                      setTimeout(() => setLogoMsg(null), 3000);
+                    }}
+                    disabled={logoSaving}
+                  >
+                    Réinitialiser
+                  </button>
+                )}
               </div>
 
-              {logoMsg && <p style={{ color: "#16A34A", fontSize: 12, margin: "4px 0 0" }}>{logoMsg}</p>}
+              {logoUnsaved && !logoMsg && (
+                <p className={styles.unsavedHint}>Fichier chargé — cliquez sur Enregistrer pour appliquer.</p>
+              )}
+              {logoMsg && <p className={styles.savedMsg}>{logoMsg}</p>}
             </div>
           </div>
 
-          {/* Input file caché */}
+          {/*
+            Input file logo — caché via display:none.
+            Avec l'approche label/htmlFor, display:none fonctionne dans tous les navigateurs :
+            le label reçoit le clic utilisateur et le délègue nativement à l'input.
+          */}
           <input
-            ref={fileInputRef}
+            id="logo-file-input"
+            ref={logoInputRef}
             type="file"
-            accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif"
+            accept="image/png,image/jpeg,image/svg+xml,image/webp"
             style={{ display: "none" }}
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (!file) return;
               if (file.size > 200 * 1024) {
                 alert("Fichier trop lourd (max 200 Ko). Utilisez un SVG ou un PNG optimisé.");
+                e.target.value = "";
                 return;
               }
               const reader = new FileReader();
               reader.onload = (ev) => {
-                setLogoPreview(ev.target?.result as string);
+                const result = ev.target?.result;
+                if (typeof result === "string") {
+                  setLogoPreview(result);
+                  setLogoUnsaved(true);
+                }
+                // Réinitialiser APRÈS la lecture pour pouvoir re-sélectionner le même fichier
+                e.target.value = "";
+              };
+              reader.onerror = () => {
+                alert("Impossible de lire ce fichier. Essayez un autre format.");
+                e.target.value = "";
               };
               reader.readAsDataURL(file);
-              // Reset input so same file can be selected again
-              e.target.value = "";
+            }}
+          />
+
+          {/* ─── Séparateur ───────────────────────────────────────────── */}
+          <hr style={{ border: "none", borderTop: "1px solid var(--klint-line)", margin: "24px 0" }} />
+
+          {/* ─── Favicon ─────────────────────────────────────────────── */}
+          <p className={styles.tabDesc}>
+            <strong>Favicon (onglet du navigateur).</strong> Format recommandé&nbsp;: PNG ou SVG carré,
+            32×32 px minimum. Taille max&nbsp;: 100&nbsp;Ko. Visible après rechargement de la page.
+          </p>
+
+          <div className={styles.logoSection}>
+            {/* Prévisualisation favicon */}
+            <div className={styles.faviconPreviewBox}>
+              {faviconPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={faviconPreview} alt="Favicon" className={styles.faviconPreviewImg} />
+              ) : (
+                <div className={styles.logoKlintFallback} style={{ transform: "scale(0.65)" }}>
+                  <span style={{ fontSize: 28, fontWeight: 900, color: "#5CD696" }}>K</span>
+                </div>
+              )}
+              <span className={styles.faviconLabel}>32px</span>
+            </div>
+
+            {/* Contrôles favicon */}
+            <div className={styles.logoControls}>
+              <div className={styles.logoButtonRow}>
+                <label
+                  htmlFor="favicon-file-input"
+                  className={`${styles.addBtn} ${styles.uploadLabel} ${faviconSaving ? styles.uploadLabelDisabled : ""}`}
+                  aria-disabled={faviconSaving}
+                >
+                  {faviconPreview ? "Changer le favicon" : "Choisir un favicon…"}
+                </label>
+
+                {(faviconPreview || faviconUnsaved) && (
+                  <button
+                    className={styles.saveBtn}
+                    onClick={async () => {
+                      if (!faviconPreview) return;
+                      setFaviconSaving(true);
+                      await saveAppFavicon(faviconPreview);
+                      setFaviconMsg("Favicon enregistré ✓ (rechargez la page pour voir l'effet)");
+                      setFaviconUnsaved(false);
+                      setFaviconSaving(false);
+                      setTimeout(() => setFaviconMsg(null), 5000);
+                    }}
+                    disabled={faviconSaving || !faviconPreview}
+                  >
+                    {faviconSaving ? "Enregistrement…" : "Enregistrer"}
+                  </button>
+                )}
+
+                {faviconPreview && (
+                  <button
+                    className={`${styles.deleteRowBtn} ${styles.logoResetBtn}`}
+                    onClick={async () => {
+                      setFaviconSaving(true);
+                      await saveAppFavicon(null);
+                      setFaviconPreview(null);
+                      setFaviconUnsaved(false);
+                      setFaviconMsg("Favicon réinitialisé.");
+                      setFaviconSaving(false);
+                      setTimeout(() => setFaviconMsg(null), 3000);
+                    }}
+                    disabled={faviconSaving}
+                  >
+                    Réinitialiser
+                  </button>
+                )}
+              </div>
+
+              {faviconUnsaved && !faviconMsg && (
+                <p className={styles.unsavedHint}>Fichier chargé — cliquez sur Enregistrer pour appliquer.</p>
+              )}
+              {faviconMsg && <p className={styles.savedMsg}>{faviconMsg}</p>}
+            </div>
+          </div>
+
+          {/* Input file favicon */}
+          <input
+            id="favicon-file-input"
+            ref={faviconInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/svg+xml,image/webp,image/x-icon"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              if (file.size > 100 * 1024) {
+                alert("Fichier trop lourd (max 100 Ko). Utilisez un SVG ou un PNG 32×32.");
+                e.target.value = "";
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = (ev) => {
+                const result = ev.target?.result;
+                if (typeof result === "string") {
+                  setFaviconPreview(result);
+                  setFaviconUnsaved(true);
+                }
+                e.target.value = "";
+              };
+              reader.onerror = () => {
+                alert("Impossible de lire ce fichier.");
+                e.target.value = "";
+              };
+              reader.readAsDataURL(file);
             }}
           />
         </div>
