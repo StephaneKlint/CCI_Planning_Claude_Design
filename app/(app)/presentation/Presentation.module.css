@@ -1,0 +1,195 @@
+/* ─── Conteneur principal ─────────────────────────────────────────────── */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--klint-paper);
+  overflow: hidden;
+}
+
+/* Quand plein écran navigateur : fond sombre, remplissage total */
+.container:fullscreen,
+.container:-webkit-full-screen,
+.container:-moz-full-screen {
+  background: #001036;
+}
+
+/* ─── Barre de présentation ───────────────────────────────────────────── */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  height: 44px;
+  background: #001036;
+  color: white;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.planningName {
+  font-size: var(--text-14);
+  font-weight: var(--weight-bold);
+  color: white;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.separator {
+  width: 1px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.18);
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+
+/* ─── Boutons barre de présentation ──────────────────────────────────── */
+.barBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  font-family: var(--font-display);
+  font-size: var(--text-12);
+  font-weight: var(--weight-semibold);
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms, color 120ms, border-color 120ms;
+  flex-shrink: 0;
+}
+
+.barBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.barBtnActive {
+  background: rgba(255, 255, 255, 0.18);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.fullscreenBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  font-family: var(--font-display);
+  font-size: var(--text-12);
+  font-weight: var(--weight-bold);
+  color: #001036;
+  background: #5CD696;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 120ms;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.fullscreenBtn:hover {
+  opacity: 0.88;
+}
+
+.backLink {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  font-family: var(--font-display);
+  font-size: var(--text-12);
+  font-weight: var(--weight-semibold);
+  color: rgba(255, 255, 255, 0.75);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 120ms;
+  flex-shrink: 0;
+}
+
+.backLink:hover {
+  color: white;
+}
+
+/* ─── Zone Gantt ──────────────────────────────────────────────────────── */
+.ganttWrap {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  background: var(--klint-white);
+}
+
+/* En plein écran, le Gantt remplit tout l'espace disponible */
+.container:fullscreen .ganttWrap,
+.container:-webkit-full-screen .ganttWrap,
+.container:-moz-full-screen .ganttWrap {
+  background: var(--klint-white);
+}
+
+/* ─── Sélecteur de planning ───────────────────────────────────────────── */
+.selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  height: 100%;
+  padding: 40px;
+  background: var(--klint-paper);
+}
+
+.selectorTitle {
+  font-size: var(--text-18);
+  font-weight: var(--weight-bold);
+  color: var(--klint-navy);
+  margin: 0;
+}
+
+.selectorDesc {
+  font-size: var(--text-13);
+  color: #6b7280;
+  margin: 0;
+}
+
+.selectorList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 440px;
+}
+
+.selectorItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--klint-white);
+  border: 1px solid var(--klint-line);
+  border-radius: var(--radius-card);
+  text-decoration: none;
+  color: var(--klint-navy);
+  font-size: var(--text-14);
+  font-weight: var(--weight-semibold);
+  transition: border-color 120ms, box-shadow 120ms;
+}
+
+.selectorItem:hover {
+  border-color: var(--klint-navy);
+  box-shadow: 0 2px 8px rgba(0, 16, 54, 0.08);
+}
+
+.selectorItemArrow {
+  color: #9ca3af;
+  font-size: var(--text-16);
+}

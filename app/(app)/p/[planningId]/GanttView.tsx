@@ -63,9 +63,8 @@ export function GanttView({ initialData, demoMemberId, ...props }: GanttViewProp
     if (!ganttRef.current || exportPending) return;
     setExportPending(true);
     try {
-      // Dynamic imports — évite le bundle côté server
+      // Dynamic import — évite le bundle côté server
       const html2canvas = (await import("html2canvas")).default;
-      const { jsPDF } = await import("jspdf");
 
       const el = ganttRef.current;
       const canvas = await html2canvas(el, {
@@ -81,20 +80,64 @@ export function GanttView({ initialData, demoMemberId, ...props }: GanttViewProp
         windowHeight: el.scrollHeight,
       });
 
-      // A3 paysage : 420 × 297 mm
-      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a3" });
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const pdfH = pdf.internal.pageSize.getHeight();
-
-      const imgW = canvas.width;
-      const imgH = canvas.height;
-      const ratio = Math.min(pdfW / imgW, pdfH / imgH);
-
       const imgData = canvas.toDataURL("image/png");
-      pdf.addImage(imgData, "PNG", 0, 0, imgW * ratio, imgH * ratio);
+      const planningName = liveData.planning.name;
 
-      const planningName = liveData.planning.name.replace(/[^a-zA-Z0-9-_]/g, "_");
-      pdf.save(`${planningName}_planning_A3.pdf`);
+      // Ouvre une fenêtre de prévisualisation / impression
+      const printWin = window.open("", "_blank");
+      if (!printWin) {
+        alert("Autorisez les pop-ups pour l'impression.");
+        return;
+      }
+      printWin.document.write(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>${planningName} — Planning A3</title>
+  <style>
+    @page { size: A3 landscape; margin: 8mm; }
+    @media print { .toolbar { display:none !important; } body { margin:0; } .img-wrap { padding:0; } }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #f1f5f9; font-family: system-ui, -apple-system, sans-serif; }
+    .toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px; background: #001036; color: white;
+      position: sticky; top: 0; z-index: 10; gap: 12px;
+    }
+    .toolbar h1 { font-size: 15px; font-weight: 700; flex: 1; }
+    .toolbar-hint { font-size: 12px; color: rgba(255,255,255,0.55); }
+    .toolbar-btns { display: flex; gap: 8px; }
+    .print-btn {
+      padding: 7px 18px; background: #5CD696; color: #001036;
+      border: none; border-radius: 6px; font-weight: 700;
+      font-size: 13px; cursor: pointer; font-family: inherit;
+    }
+    .print-btn:hover { opacity: 0.88; }
+    .close-btn {
+      padding: 7px 14px; background: transparent; color: white;
+      border: 1px solid rgba(255,255,255,0.3); border-radius: 6px;
+      font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit;
+    }
+    .close-btn:hover { background: rgba(255,255,255,0.1); }
+    .img-wrap { padding: 8mm; }
+    img { width: 100%; height: auto; display: block; }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <h1>${planningName} — Planning A3 paysage</h1>
+    <span class="toolbar-hint">Format A3 paysage — 420 × 297 mm</span>
+    <div class="toolbar-btns">
+      <button class="close-btn" onclick="window.close()">Fermer</button>
+      <button class="print-btn" onclick="window.print()">🖨️&nbsp;Imprimer / PDF</button>
+    </div>
+  </div>
+  <div class="img-wrap">
+    <img src="${imgData}" alt="${planningName}">
+  </div>
+</body>
+</html>`);
+      printWin.document.close();
     } catch (err) {
       console.error("Export PDF failed:", err);
       alert("L'export PDF a échoué. Essayez de réduire le zoom ou la période affichée.");

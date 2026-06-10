@@ -47,6 +47,8 @@ export function RessourcesClient({ data }: Props) {
 
   // ── Member CRUD modal state ────────────────────────────────────────────────
   const [memberModal, setMemberModal] = useState<{ type: "add" | "edit"; member?: MemberRow } | null>(null);
+  const [memberFormFirstName, setMemberFormFirstName] = useState("");
+  const [memberFormLastName, setMemberFormLastName] = useState("");
   const [memberFormName, setMemberFormName] = useState("");
   const [memberFormEmail, setMemberFormEmail] = useState("");
   const [memberFormInitials, setMemberFormInitials] = useState("");
@@ -100,6 +102,8 @@ export function RessourcesClient({ data }: Props) {
 
   // ── Member CRUD ────────────────────────────────────────────────────────────
   const handleOpenAdd = () => {
+    setMemberFormFirstName("");
+    setMemberFormLastName("");
     setMemberFormName("");
     setMemberFormEmail("");
     setMemberFormInitials("");
@@ -109,6 +113,11 @@ export function RessourcesClient({ data }: Props) {
   };
 
   const handleOpenEdit = (member: MemberRow) => {
+    const parts = member.userName.trim().split(" ");
+    const firstName = parts[0] ?? "";
+    const lastName = parts.slice(1).join(" ");
+    setMemberFormFirstName(firstName);
+    setMemberFormLastName(lastName);
     setMemberFormName(member.userName);
     setMemberFormEmail(member.userEmail);
     setMemberFormInitials(member.initials ?? "");
@@ -487,17 +496,46 @@ export function RessourcesClient({ data }: Props) {
 
             {/* Form body */}
             <div className={styles.memberFormBody}>
+              {/* Prénom + Nom côte à côte */}
               <div className={styles.memberFormRow}>
-                <label className={styles.memberFormLabel}>Nom complet *</label>
-                <input
-                  type="text"
-                  className={styles.memberFormInput}
-                  value={memberFormName}
-                  onChange={(e) => setMemberFormName(e.target.value)}
-                  placeholder="Prénom Nom"
-                  autoFocus
-                />
+                <label className={styles.memberFormLabel}>Prénom *</label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input
+                    type="text"
+                    className={styles.memberFormInput}
+                    value={memberFormFirstName}
+                    onChange={(e) => {
+                      const fn = e.target.value;
+                      setMemberFormFirstName(fn);
+                      setMemberFormName(`${fn.trim()} ${memberFormLastName.trim()}`.trim());
+                    }}
+                    placeholder="Prénom"
+                    autoFocus
+                    style={{ flex: 1 }}
+                  />
+                  <input
+                    type="text"
+                    className={styles.memberFormInput}
+                    value={memberFormLastName}
+                    onChange={(e) => {
+                      const ln = e.target.value;
+                      setMemberFormLastName(ln);
+                      setMemberFormName(`${memberFormFirstName.trim()} ${ln.trim()}`.trim());
+                    }}
+                    placeholder="Nom"
+                    style={{ flex: 1 }}
+                  />
+                </div>
               </div>
+              {/* Nom complet calculé (lecture seule, pour info) */}
+              {memberFormName && (
+                <div className={styles.memberFormRow} style={{ marginTop: -4 }}>
+                  <label className={styles.memberFormLabel}>Nom complet</label>
+                  <span style={{ fontSize: "var(--text-13)", color: "var(--klint-navy)", fontWeight: "var(--weight-medium)" }}>
+                    {memberFormName}
+                  </span>
+                </div>
+              )}
               {memberModal.type === "add" && (
                 <div className={styles.memberFormRow}>
                   <label className={styles.memberFormLabel}>Email *</label>

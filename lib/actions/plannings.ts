@@ -184,3 +184,159 @@ export async function archivePlanning(planningId: string) {
   revalidatePath("/p");
   revalidatePath("/plannings");
 }
+
+// ---------------------------------------------------------------------------
+// Import Planning from JSON
+// ---------------------------------------------------------------------------
+
+export async function importPlanningFromJSON(jsonStr: string): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let data: any;
+  try {
+    data = JSON.parse(jsonStr);
+  } catch {
+    throw new Error("Fichier JSON invalide.");
+  }
+
+  if (!data?.klintPlanningExport) {
+    throw new Error("Ce fichier n'est pas un export Klint Planning valide.");
+  }
+
+  const p = data.planning ?? {};
+
+  // 1. Créer le planning
+  const [newP] = await db.insert(plannings).values({
+    name:          `${p.name ?? "Planning importé"} (import)`,
+    type:          p.type ?? "multi",
+    year:          Number(p.year) || new Date().getFullYear(),
+    viewStart:     p.viewStart,
+    viewEnd:       p.viewEnd,
+    description:   p.description ?? null,
+    referenceDate: p.referenceDate ?? new Date().toISOString().slice(0, 10),
+  }).returning({ id: plannings.id });
+
+  const newId = newP.id;
+
+  // 2. Settings
+  const s = data.settings;
+  await db.insert(planningSettings).values({
+    planningId:             newId,
+    autoLate:               s?.autoLate ?? true,
+    autoCloseAfterMepDays:  s?.autoCloseAfterMepDays ?? 30,
+    notifyOnLate:           s?.notifyOnLate ?? true,
+  });
+
+  // 3. Phase types
+  const ptArr = Array.isArray(data.phaseTypes) ? data.phaseTypes : [];
+  if (ptArr.length > 0) {
+    await db.insert(phaseTypes).values(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ptArr.map((pt: any, i: number) => ({
+        planningId: newId,
+        code:       String(pt.code ?? `pt_${i}`),
+        label:      String(pt.label ?? ""),
+        sortOrder:  Number(pt.sortOrder ?? i),
+      }))
+    );
+  }
+
+  // 4. Milestone types
+  const mtArr = Array.isArray(data.milestoneTypes) ? data.milestoneTypes : [];
+  if (mtArr.length > 0) {
+    await db.insert(milestoneTypes).values(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      mtArr.map((mt: any, i: number) => ({
+        planningId: newId,
+        code:       String(mt.code ?? `mt_${i}`),
+        label:      String(mt.label ?? ""),
+        color:      String(mt.color ?? "#000000"),
+        sortOrder:  Number(mt.sortOrder ?? i),
+      }))
+    );
+  }
+
+  // 5. Statuses
+  const stArr = Array.isArray(data.statuses) ? data.statuses : [];
+  if (stArr.length > 0) {
+    await db.insert(statuses).values(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      stArr.map((st: any, i: number) => ({
+        planningId: newId,
+        code:       String(st.code ?? `st_${i}`),
+        label:      String(st.label ?? ""),
+        color:      String(st.color ?? "#000000"),
+        bg:         String(st.bg ?? "#FFFFFF"),
+        sortOrder:  Number(st.sortOrder ?? i),
+      }))
+    );
+  }
+
+  // 6. Domains → lots → phases + milestones
+  const domainsArr = Array.isArray(data.domains) ? data.domains : [];
+  for (const d of domainsArr) {
+    const [newDomain] = await db.insert(domains).values({
+      planningId: newId,
+      code:       String(d.code ?? "DOM"),
+      name:       String(d.name ?? "Domaine"),
+      bg:         String(d.bg ?? "#F8FAFC"),
+      bgAlt:      d.bgAlt ?? null,
+      strong:     String(d.strong ?? "#001036"),
+      phaseColor: String(d.phaseColor ?? "#3B82F6"),
+      sortOrder:  Number(d.sortOrder ?? 0),
+      collapsed:  Boolean(d.collapsed ?? false),
+      cadence:    d.cadence ?? null,
+    }).returning({ id: domains.id });
+
+    const lotsArr = Array.isArray(d.lots) ? d.lots : [];
+    for (const l of lotsArr) {
+      const [newLot] = await db.insert(lots).values({
+        planningId: newId,
+        domainId:   newDomain.id,
+        name:       String(l.name ?? "Lot"),
+        subtitle:   l.subtitle ?? null,
+        icon:       l.icon ?? null,
+        sortOrder:  Number(l.sortOrder ?? 0),
+        hidden:     Boolean(l.hidden ?? false),
+      }).returning({ id: lots.id });
+
+      const phasesArr = Array.isArray(l.phases) ? l.phases : [];
+      if (phasesArr.length > 0) {
+        await db.insert(phases).values(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          phasesArr.map((ph: any, idx: number) => ({
+            lotId:     newLot.id,
+            type:      String(ph.type ?? "custom"),
+            label:     String(ph.label ?? ""),
+            startDate: ph.startDate,
+            endDate:   ph.endDate,
+            status:    ph.status ?? null,
+            progress:  Number(ph.progress ?? 0),
+            color:     ph.color ?? null,
+            note:      ph.note ?? null,
+            sortOrder: Number(ph.sortOrder ?? idx),
+          }))
+        );
+      }
+
+      const msArr = Array.isArray(l.milestones) ? l.milestones : [];
+      if (msArr.length > 0) {
+        await db.insert(milestones).values(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          msArr.map((ms: any) => ({
+            lotId:    newLot.id,
+            type:     String(ms.type ?? "custom"),
+            label:    String(ms.label ?? ""),
+            date:     ms.date,
+            color:    ms.color ?? null,
+            labelPos: ms.labelPos ?? "above",
+            note:     ms.note ?? null,
+          }))
+        );
+      }
+    }
+  }
+
+  revalidatePath("/plannings");
+  revalidatePath("/p");
+  return newId;
+}

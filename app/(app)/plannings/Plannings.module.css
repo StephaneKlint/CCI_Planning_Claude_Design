@@ -196,6 +196,63 @@
   cursor: not-allowed;
 }
 
+/* ─── List top bar (import btn) ────────────────────────────────────────── */
+.listTopBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.importBtn {
+  padding: 6px 14px;
+  font-family: var(--font-display);
+  font-size: var(--text-13);
+  font-weight: var(--weight-semibold);
+  color: var(--klint-navy);
+  background: var(--klint-white);
+  border: 1.5px solid var(--klint-line);
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+
+.importBtn:hover:not(:disabled) {
+  background: var(--klint-paper);
+  border-color: var(--klint-navy);
+}
+
+.importBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.importError {
+  font-size: var(--text-12);
+  color: #DC2626;
+}
+
+.exportJsonBtn {
+  padding: 5px 10px;
+  font-family: var(--font-display);
+  font-size: var(--text-12);
+  font-weight: var(--weight-medium);
+  color: #374151;
+  background: transparent;
+  border: 1px solid var(--klint-line);
+  border-radius: var(--radius-btn);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+
+.exportJsonBtn:hover {
+  background: var(--klint-paper);
+  border-color: #9ca3af;
+}
+
 /* ─── Empty state ───────────────────────────────────────────────────────── */
 .empty {
   display: flex;
