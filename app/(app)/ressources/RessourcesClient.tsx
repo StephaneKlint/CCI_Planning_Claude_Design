@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { GanttData, MemberRow } from "@/lib/db/queries";
+import type { GanttData, MemberRow, ExistingUserRow } from "@/lib/db/queries";
 import { togglePhaseAssignee } from "@/lib/actions/planning";
 import { addMember, updateMember, removeMember } from "@/lib/actions/members";
 import { useGanttStore } from "@/store/ganttStore";
@@ -10,6 +10,7 @@ import styles from "./Ressources.module.css";
 
 interface Props {
   data: GanttData;
+  existingUsers: ExistingUserRow[];
 }
 
 const PHASE_TYPE_LABELS: Record<string, string> = {
@@ -30,7 +31,7 @@ function fmt(d: string) {
   return `${parts[2]}/${parts[1]}`;
 }
 
-export function RessourcesClient({ data }: Props) {
+export function RessourcesClient({ data, existingUsers }: Props) {
   const { planning, domains, lots, phases } = data;
   const router = useRouter();
   const { pushUndo } = useGanttStore();
@@ -57,6 +58,9 @@ export function RessourcesClient({ data }: Props) {
   const [memberFormColor, setMemberFormColor] = useState("#001D63");
   const [memberFormError, setMemberFormError] = useState<string | null>(null);
   const [memberFormPending, setMemberFormPending] = useState(false);
+  // Picker d'utilisateurs existants
+  const [pickerSearch, setPickerSearch] = useState("");
+  const [pickerMode, setPickerMode] = useState<"picker" | "new">("picker");
 
   // Effective members list (filters out optimistically deleted)
   const effectiveMembers = data.members.filter((m) => !deletedMemberIds.has(m.id));
@@ -111,7 +115,25 @@ export function RessourcesClient({ data }: Props) {
     setMemberFormInitials("");
     setMemberFormColor(MEMBER_COLORS[effectiveMembers.length % MEMBER_COLORS.length]);
     setMemberFormError(null);
+    setPickerSearch("");
+    setPickerMode(existingUsers.length > 0 ? "picker" : "new");
     setMemberModal({ type: "add" });
+  };
+
+  // Pré-remplit le formulaire depuis un utilisateur existant
+  const handlePickExistingUser = (user: ExistingUserRow) => {
+    const parts = (user.name ?? "").trim().split(" ");
+    const firstName = parts[0] ?? "";
+    const lastName = parts.slice(1).join(" ");
+    setMemberFormFirstName(firstName);
+    setMemberFormLastName(lastName);
+    setMemberFormName(user.name ?? "");
+    setMemberFormEmail(user.email);
+    const autoInitials = (firstName.slice(0, 1) + lastName.slice(0, 1)).toUpperCase() || user.email.slice(0, 2).toUpperCase();
+    setMemberFormInitials(user.initials ?? autoInitials);
+    setMemberFormColor(user.color ?? MEMBER_COLORS[effectiveMembers.length % MEMBER_COLORS.length]);
+    setMemberFormError(null);
+    setPickerMode("new"); // bascule sur le formulaire pré-rempli
   };
 
   const handleOpenEdit = (member: MemberRow) => {
@@ -510,7 +532,79 @@ export function RessourcesClient({ data }: Props) {
               </button>
             </div>
 
+            {/* ── Picker responsables existants (mode "add" seulement) ── */}
+            {memberModal.type === "add" && existingUsers.length > 0 && (
+              <div className={styles.pickerSection}>
+                {/* Tabs : Picker / Nouveau */}
+                <div className={styles.pickerTabs}>
+                  <button
+                    className={`${styles.pickerTab} ${pickerMode === "picker" ? styles.pickerTabActive : ""}`}
+                    onClick={() => setPickerMode("picker")}
+                    type="button"
+                  >
+                    Responsables existants
+                    <span className={styles.pickerBadge}>{existingUsers.length}</span>
+                  </button>
+                  <button
+                    className={`${styles.pickerTab} ${pickerMode === "new" ? styles.pickerTabActive : ""}`}
+                    onClick={() => setPickerMode("new")}
+                    type="button"
+                  >
+                    Nouveau
+                  </button>
+                </div>
+
+                {pickerMode === "picker" && (
+                  <div className={styles.pickerBody}>
+                    <input
+                      type="text"
+                      className={styles.pickerSearch}
+                      placeholder="Rechercher par nom ou email…"
+                      value={pickerSearch}
+                      onChange={(e) => setPickerSearch(e.target.value)}
+                      autoFocus
+                    />
+                    <div className={styles.pickerList}>
+                      {existingUsers
+                        .filter((u) => {
+                          const q = pickerSearch.toLowerCase();
+                          return !q ||
+                            (u.name ?? "").toLowerCase().includes(q) ||
+                            u.email.toLowerCase().includes(q);
+                        })
+                        .map((u) => (
+                          <button
+                            key={u.id}
+                            className={styles.pickerRow}
+                            onClick={() => handlePickExistingUser(u)}
+                            type="button"
+                          >
+                            <span
+                              className={styles.pickerAvatar}
+                              style={{ background: u.color ?? "#001D63" }}
+                            >
+                              {(u.initials ?? (u.name ?? u.email).slice(0, 2)).toUpperCase()}
+                            </span>
+                            <span className={styles.pickerInfo}>
+                              <span className={styles.pickerName}>{u.name ?? "—"}</span>
+                              <span className={styles.pickerEmail}>{u.email}</span>
+                            </span>
+                          </button>
+                        ))}
+                      {existingUsers.filter((u) => {
+                        const q = pickerSearch.toLowerCase();
+                        return !q || (u.name ?? "").toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+                      }).length === 0 && (
+                        <p className={styles.pickerEmpty}>Aucun résultat pour « {pickerSearch} »</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Form body */}
+            {(memberModal.type === "edit" || pickerMode === "new") && (
             <div className={styles.memberFormBody}>
               {/* Prénom + Nom côte à côte */}
               <div className={styles.memberFormRow}>
@@ -617,6 +711,7 @@ export function RessourcesClient({ data }: Props) {
                 <p className={styles.memberFormError}>{memberFormError}</p>
               )}
             </div>
+            )}
 
             {/* Footer */}
             <div className={styles.modalFooter}>

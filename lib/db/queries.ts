@@ -193,3 +193,51 @@ export async function listConnectionLogs(limit = 100): Promise<ConnectionLogRow[
     .orderBy(desc(connectionLogs.createdAt))
     .limit(limit);
 }
+
+// ── Utilisateurs existants (pour le picker de membres) ───────────────────────
+export type ExistingUserRow = {
+  id: string;
+  name: string | null;
+  email: string;
+  initials: string | null;
+  color: string | null;
+};
+
+/**
+ * Retourne tous les utilisateurs déjà connus dans la plateforme
+ * qui ne sont PAS encore membres du planning donné.
+ * Utile pour le picker "Ajouter un responsable existant".
+ */
+export async function listUsersNotInPlanning(planningId: string): Promise<ExistingUserRow[]> {
+  // Étape 1 : IDs des users déjà membres de ce planning
+  const existingMembers = await db
+    .select({ userId: planningMembers.userId })
+    .from(planningMembers)
+    .where(eq(planningMembers.planningId, planningId));
+
+  const excludedIds = new Set(existingMembers.map((m) => m.userId));
+
+  // Étape 2 : tous les users avec initiales/couleur d'un planning précédent
+  const rows = await db
+    .select({
+      id:       users.id,
+      name:     users.name,
+      email:    users.email,
+      initials: planningMembers.initials,
+      color:    planningMembers.color,
+    })
+    .from(users)
+    .leftJoin(planningMembers, eq(planningMembers.userId, users.id))
+    .limit(500);
+
+  // Déduplication + exclusion des membres existants
+  const seen = new Set<string>();
+  const result: ExistingUserRow[] = [];
+  for (const row of rows) {
+    if (!seen.has(row.id) && !excludedIds.has(row.id)) {
+      seen.add(row.id);
+      result.push(row);
+    }
+  }
+  return result;
+}

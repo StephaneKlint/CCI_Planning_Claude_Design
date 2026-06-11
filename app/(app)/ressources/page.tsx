@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { listPlannings, getGanttData } from "@/lib/db/queries";
+import { listPlannings, getGanttData, listUsersNotInPlanning } from "@/lib/db/queries";
 import styles from "./Ressources.module.css";
 import { RessourcesClient } from "./RessourcesClient";
 
@@ -18,7 +18,10 @@ export default async function RessourcesPage({ searchParams }: Props) {
   }
 
   const activePlanningId = qPlanningId ?? planningList[0].id;
-  const data = await getGanttData(activePlanningId);
+  const [data, existingUsers] = await Promise.all([
+    getGanttData(activePlanningId),
+    listUsersNotInPlanning(activePlanningId),
+  ]);
   if (!data) return <div className={styles.empty}>Données introuvables.</div>;
 
   return (
@@ -48,7 +51,7 @@ export default async function RessourcesPage({ searchParams }: Props) {
           ))}
         </div>
       )}
-      <RessourcesClient data={data} />
+      <RessourcesClient data={data} existingUsers={existingUsers} />
     </>
   );
 }

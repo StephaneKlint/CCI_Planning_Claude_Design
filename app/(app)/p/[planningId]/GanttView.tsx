@@ -165,8 +165,10 @@ export function GanttView({ initialData, demoMemberId, ...props }: GanttViewProp
         windowHeight: exportH,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onclone: (_clonedDoc: Document, clonedOuter: any) => {
+          const el = clonedOuter as HTMLElement;
+
           // Agrandit le conteneur extérieur à la taille totale du contenu
-          (clonedOuter as HTMLElement).style.cssText = [
+          el.style.cssText = [
             `position: relative !important`,
             `width: ${exportW}px !important`,
             `height: ${exportH}px !important`,
@@ -175,13 +177,38 @@ export function GanttView({ initialData, demoMemberId, ...props }: GanttViewProp
           ].join(";");
 
           // Supprime toutes les contraintes de débordement dans les enfants
-          (clonedOuter as HTMLElement).querySelectorAll<HTMLElement>("*").forEach((child) => {
+          el.querySelectorAll<HTMLElement>("*").forEach((child) => {
             child.style.overflow  = "visible";
             child.style.overflowX = "visible";
             child.style.overflowY = "visible";
             child.style.maxHeight = "none";
             child.style.maxWidth  = "none";
           });
+
+          // Force les hauteurs des conteneurs flex clés pour le rendu vertical complet
+          const sideEl      = el.querySelector<HTMLElement>("[data-gantt-side]");
+          const sideRowsEl  = el.querySelector<HTMLElement>("[data-gantt-side-rows]");
+          const timelineEl  = el.querySelector<HTMLElement>("[data-gantt-timeline]");
+          const bodyCloneEl = el.querySelector<HTMLElement>("[data-gantt-body]");
+
+          if (sideEl) {
+            sideEl.style.height    = `${exportH}px`;
+            sideEl.style.minHeight = `${exportH}px`;
+          }
+          if (sideRowsEl) {
+            sideRowsEl.style.height    = `${timelineH}px`;
+            sideRowsEl.style.minHeight = `${timelineH}px`;
+            sideRowsEl.style.flex      = "none";
+          }
+          if (timelineEl) {
+            timelineEl.style.height    = `${exportH}px`;
+            timelineEl.style.minHeight = `${exportH}px`;
+          }
+          if (bodyCloneEl) {
+            bodyCloneEl.style.height    = `${timelineH}px`;
+            bodyCloneEl.style.minHeight = `${timelineH}px`;
+            bodyCloneEl.style.flex      = "none";
+          }
         },
       });
 

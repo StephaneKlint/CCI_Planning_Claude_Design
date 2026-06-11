@@ -182,6 +182,7 @@ export function Gantt({
         <div
           className={styles.sideScroll}
           style={{ width: SIDE_W, minWidth: SIDE_W }}
+          data-gantt-side="true"
         >
           <GanttSide
             rows={rows}
@@ -198,7 +199,7 @@ export function Gantt({
       )}
 
       {/* RIGHT — Timeline */}
-      <div ref={timelineWrapperRef} className={styles.timelineWrapper}>
+      <div ref={timelineWrapperRef} className={styles.timelineWrapper} data-gantt-timeline="true">
         {/* Header row (scrolls horizontally) */}
         <div
           ref={headerRef}

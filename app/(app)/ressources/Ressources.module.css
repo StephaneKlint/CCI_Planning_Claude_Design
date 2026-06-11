@@ -702,3 +702,138 @@
 }
 .memberFormSaveBtn:hover { background: #002070; }
 .memberFormSaveBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Picker responsables existants ── */
+.pickerSection {
+  border-bottom: 1px solid var(--klint-line);
+}
+
+.pickerTabs {
+  display: flex;
+  gap: 0;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--klint-line);
+}
+
+.pickerTab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  font-size: var(--text-12);
+  font-weight: var(--weight-medium);
+  color: #6b7280;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  font-family: var(--font-display);
+}
+.pickerTab:hover { color: var(--klint-navy); }
+.pickerTabActive {
+  color: var(--klint-navy);
+  border-bottom-color: var(--klint-navy);
+  font-weight: var(--weight-semibold);
+}
+
+.pickerBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--klint-navy);
+  color: white;
+  font-size: var(--text-10);
+  font-weight: var(--weight-bold);
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+}
+
+.pickerBody {
+  padding: 12px 20px;
+}
+
+.pickerSearch {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: var(--text-13);
+  font-family: var(--font-display);
+  border: 1px solid var(--klint-line);
+  border-radius: 8px;
+  outline: none;
+  background: var(--klint-white);
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+.pickerSearch:focus { border-color: var(--klint-navy); }
+
+.pickerList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.pickerRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.12s;
+  font-family: var(--font-display);
+}
+.pickerRow:hover { background: #f1f5f9; }
+
+.pickerAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: var(--text-10);
+  font-weight: var(--weight-bold);
+  flex-shrink: 0;
+}
+
+.pickerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.pickerName {
+  font-size: var(--text-13);
+  font-weight: var(--weight-medium);
+  color: var(--klint-navy);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pickerEmail {
+  font-size: var(--text-11);
+  color: #9ca3af;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pickerEmpty {
+  font-size: var(--text-12);
+  color: #9ca3af;
+  text-align: center;
+  padding: 12px 0;
+  margin: 0;
+}
