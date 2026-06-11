@@ -412,6 +412,99 @@ export async function deleteDomain(domainId: string, planningId: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Restore (undo delete) actions
+// ---------------------------------------------------------------------------
+
+type RestoredPhase = {
+  id: string; lotId: string; type: string; startDate: string; endDate: string;
+  label: string | null; status: string | null; progress: number;
+  color: string | null; note: string | null; sortOrder: number;
+};
+type RestoredMilestone = {
+  id: string; lotId: string; type: string; label: string; date: string;
+  color: string | null; note: string | null; labelPos: string;
+};
+
+export async function restorePhase(phase: RestoredPhase, planningId: string) {
+  await assertCanEdit(planningId);
+  await db.insert(phases).values({
+    id: phase.id,
+    lotId: phase.lotId,
+    type: phase.type,
+    startDate: phase.startDate,
+    endDate: phase.endDate,
+    label: phase.label,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    status: phase.status as any,
+    progress: phase.progress,
+    color: phase.color,
+    note: phase.note,
+    sortOrder: phase.sortOrder,
+  }).onConflictDoNothing();
+  await logActivity(planningId, "restored", "phase", phase.id, "Phase restaurée (undo)");
+  revalidatePath(`/p/${planningId}`);
+}
+
+export async function restoreMilestone(milestone: RestoredMilestone, planningId: string) {
+  await assertCanEdit(planningId);
+  await db.insert(milestones).values({
+    id: milestone.id,
+    lotId: milestone.lotId,
+    type: milestone.type,
+    label: milestone.label,
+    date: milestone.date,
+    color: milestone.color,
+    note: milestone.note,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    labelPos: milestone.labelPos as any,
+  }).onConflictDoNothing();
+  await logActivity(planningId, "restored", "milestone", milestone.id, "Jalon restauré (undo)");
+  revalidatePath(`/p/${planningId}`);
+}
+
+export async function restoreLot(
+  lot: { id: string; domainId: string; name: string; subtitle: string | null; sortOrder: number },
+  lotPhases: RestoredPhase[],
+  lotMilestones: RestoredMilestone[],
+  planningId: string
+) {
+  await assertCanEdit(planningId);
+  // Re-insert the lot
+  await db.insert(lots).values({
+    id: lot.id,
+    planningId,
+    domainId: lot.domainId,
+    name: lot.name,
+    subtitle: lot.subtitle,
+    sortOrder: lot.sortOrder,
+  }).onConflictDoNothing();
+  // Re-insert phases
+  if (lotPhases.length > 0) {
+    await db.insert(phases).values(
+      lotPhases.map((p) => ({
+        id: p.id, lotId: p.lotId, type: p.type, startDate: p.startDate, endDate: p.endDate,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        label: p.label, status: p.status as any,
+        progress: p.progress, color: p.color, note: p.note, sortOrder: p.sortOrder,
+      }))
+    ).onConflictDoNothing();
+  }
+  // Re-insert milestones
+  if (lotMilestones.length > 0) {
+    await db.insert(milestones).values(
+      lotMilestones.map((m) => ({
+        id: m.id, lotId: m.lotId, type: m.type, label: m.label, date: m.date,
+        color: m.color, note: m.note,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        labelPos: m.labelPos as any,
+      }))
+    ).onConflictDoNothing();
+  }
+  await logActivity(planningId, "restored", "lot", lot.id, `Projet "${lot.name}" restauré (undo)`);
+  revalidatePath(`/p/${planningId}`);
+}
+
+// ---------------------------------------------------------------------------
 // Milestone mutations
 // ---------------------------------------------------------------------------
 

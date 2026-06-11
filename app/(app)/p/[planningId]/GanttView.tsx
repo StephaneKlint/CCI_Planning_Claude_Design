@@ -20,6 +20,7 @@ import {
   updatePhaseStatus, updatePhaseProgress, updatePhaseNote,
   updatePhaseDates, updatePhaseColor, updatePhaseLabel,
   updateMilestone,
+  restorePhase, restoreMilestone, restoreLot,
 } from "@/lib/actions/planning";
 import { restoreMember } from "@/lib/actions/members";
 import type { GanttProps } from "@/components/gantt/types";
@@ -109,6 +110,15 @@ export function GanttView({ initialData, demoMemberId, ...props }: GanttViewProp
             initials: entry.initials, color: entry.color,
             permission: entry.permission, phaseIds: entry.phaseIds,
           });
+          break;
+        case "phase-delete":
+          await restorePhase(entry.phase, entry.planningId);
+          break;
+        case "milestone-delete":
+          await restoreMilestone(entry.milestone, entry.planningId);
+          break;
+        case "lot-delete":
+          await restoreLot(entry.lot, entry.phases, entry.milestones, entry.planningId);
           break;
       }
       qc.invalidateQueries({ queryKey: planningQueryKey(props.planningId) });

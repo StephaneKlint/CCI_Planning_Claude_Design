@@ -27,7 +27,27 @@ export type UndoEntry =
   | { type: "milestone-update"; milestoneId: string; planningId: string;
       prev: { date?: string; label?: string; note?: string | null; color?: string | null } }
   | { type: "member-delete";  userId: string; planningId: string; initials: string | null;
-      color: string | null; permission: string; phaseIds: string[] };
+      color: string | null; permission: string; phaseIds: string[] }
+  | { type: "phase-delete"; planningId: string; phase: {
+      id: string; lotId: string; type: string; startDate: string; endDate: string;
+      label: string | null; status: string | null; progress: number;
+      color: string | null; note: string | null; sortOrder: number;
+    }}
+  | { type: "milestone-delete"; planningId: string; milestone: {
+      id: string; lotId: string; type: string; label: string; date: string;
+      color: string | null; note: string | null; labelPos: string;
+    }}
+  | { type: "lot-delete"; planningId: string; lot: {
+      id: string; domainId: string; name: string; subtitle: string | null;
+      sortOrder: number;
+    }; phases: Array<{
+      id: string; lotId: string; type: string; startDate: string; endDate: string;
+      label: string | null; status: string | null; progress: number;
+      color: string | null; note: string | null; sortOrder: number;
+    }>; milestones: Array<{
+      id: string; lotId: string; type: string; label: string; date: string;
+      color: string | null; note: string | null; labelPos: string;
+    }>};
 
 const UNDO_MAX = 30;
 

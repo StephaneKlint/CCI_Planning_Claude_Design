@@ -509,8 +509,18 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
             className={styles.deleteBtn}
             aria-label="Supprimer la phase"
             onClick={() => {
-              if (!confirm(`Supprimer cette phase ? Cette action est irréversible.`)) return;
+              if (!confirm(`Supprimer cette phase ? Ctrl+Z permettra de restaurer.`)) return;
               startTransition(async () => {
+                pushUndo({
+                  type: "phase-delete",
+                  planningId,
+                  phase: {
+                    id: phase.id, lotId: phase.lotId, type: phase.type,
+                    startDate: phase.startDate, endDate: phase.endDate,
+                    label: phase.label, status: phase.status, progress: phase.progress,
+                    color: phase.color, note: phase.note, sortOrder: phase.sortOrder,
+                  },
+                });
                 await deletePhase(phase.id, planningId);
                 closeEdit();
                 router.refresh();
@@ -633,8 +643,26 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
             style={{ marginRight: "auto" }}
             title={`Supprimer "${lot.name}" et toutes ses phases`}
             onClick={() => {
-              if (!confirm(`Supprimer le projet "${lot.name}" ?\n\nToutes ses phases et jalons seront supprimés. Irréversible.`)) return;
+              if (!confirm(`Supprimer le projet "${lot.name}" ?\n\nToutes ses phases et jalons seront supprimés. Ctrl+Z permettra de restaurer.`)) return;
               startTransition(async () => {
+                pushUndo({
+                  type: "lot-delete",
+                  planningId: lotPlanningId,
+                  lot: {
+                    id: lot.id, domainId: lot.domainId, name: lot.name,
+                    subtitle: lot.subtitle ?? null, sortOrder: lot.sortOrder,
+                  },
+                  phases: lotPhases.map((p) => ({
+                    id: p.id, lotId: p.lotId, type: p.type,
+                    startDate: p.startDate, endDate: p.endDate,
+                    label: p.label, status: p.status, progress: p.progress,
+                    color: p.color, note: p.note, sortOrder: p.sortOrder,
+                  })),
+                  milestones: lotMilestones.map((m) => ({
+                    id: m.id, lotId: m.lotId, type: m.type, label: m.label, date: m.date,
+                    color: m.color, note: m.note, labelPos: m.labelPos,
+                  })),
+                });
                 await deleteLot(lotId, lotPlanningId);
                 closeEdit();
                 router.refresh();
@@ -880,8 +908,16 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
             className={styles.deleteBtn}
             aria-label="Supprimer le jalon"
             onClick={() => {
-              if (!confirm(`Supprimer ce jalon ? Cette action est irréversible.`)) return;
+              if (!confirm(`Supprimer ce jalon ? Ctrl+Z permettra de restaurer.`)) return;
               startTransition(async () => {
+                pushUndo({
+                  type: "milestone-delete",
+                  planningId,
+                  milestone: {
+                    id: ms.id, lotId: ms.lotId, type: ms.type, label: ms.label,
+                    date: ms.date, color: ms.color, note: ms.note, labelPos: ms.labelPos,
+                  },
+                });
                 await deleteMilestone(ms.id, planningId);
                 closeEdit();
                 router.refresh();
