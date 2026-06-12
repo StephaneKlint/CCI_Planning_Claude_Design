@@ -1,6 +1,6 @@
 /**
  * Page Aide — Guide utilisateur mode formation (avec recherche)
- * Couvre l'ensemble des fonctionnalités (Jalons 0-9)
+ * Couvre l'ensemble des fonctionnalités (Jalons 0-10)
  */
 "use client";
 
@@ -189,16 +189,18 @@ interface SectionDef {
 }
 
 const SECTIONS: SectionDef[] = [
-  { id: "plannings", num: "1", title: "Mes plannings", keywords: "plannings créer dupliquer archiver liste importer exporter json import export nouveau planning multi mono modele vide renommer supprimer" },
-  { id: "gantt", num: "2", title: "Vue Gantt", keywords: "gantt domaine lot phase jalon navigation zoom coloration affichage filtrer période présence ajouter filtres vide empty état domaine créer supprimer" },
-  { id: "toolbar", num: "3", title: "Barre d'outils", keywords: "toolbar barre outils panneau aujourd hui pdf json projets sélection filtrer annuler undo" },
-  { id: "edit", num: "4", title: "Édition des phases et jalons", keywords: "éditer phase jalon dates statut avancement couleur note assigné responsable sélection multiple recherche palette commandes ctrl k" },
-  { id: "raccourcis", num: "5", title: "Raccourcis clavier", keywords: "raccourcis clavier ctrl k esc flèches zoom selection escape undo annuler ctrl z" },
-  { id: "synthese", num: "6", title: "Vue Synthèse", keywords: "synthèse kpi indicateurs jalons retard risque alertes avancement domaine collapsible ouvrir fermer sous-projets lots chips statuts" },
-  { id: "ressources", num: "7", title: "Vue Ressources", keywords: "ressources membres responsables ajouter modifier supprimer attribution phases planning email initiales couleur" },
-  { id: "parametres", num: "8", title: "Paramètres", keywords: "paramètres général cadence types phases jalons statuts membres droits apparence logo" },
-  { id: "logo", num: "9", title: "Logo & Apparence", keywords: "logo apparence navbar png svg favicon changer enregistrer réinitialiser" },
-  { id: "pdf", num: "10", title: "Export PDF A3", keywords: "pdf export a3 imprimer impression format paysage capture download télécharger" },
+  { id: "plannings",    num: "1",  title: "Mes plannings",                   keywords: "plannings créer dupliquer archiver liste importer exporter json import export nouveau planning multi mono modele vide renommer supprimer" },
+  { id: "gantt",        num: "2",  title: "Vue Gantt",                        keywords: "gantt domaine lot phase jalon navigation zoom coloration affichage filtrer période présence ajouter filtres vide empty état domaine créer supprimer tooltip survol dates" },
+  { id: "toolbar",      num: "3",  title: "Barre d'outils",                   keywords: "toolbar barre outils panneau aujourd hui pdf json projets sélection filtrer annuler undo" },
+  { id: "edit",         num: "4",  title: "Édition des phases et jalons",     keywords: "éditer phase jalon dates statut avancement couleur note assigné responsable sélection multiple recherche palette commandes ctrl k fermer overlay" },
+  { id: "raccourcis",   num: "5",  title: "Raccourcis clavier",               keywords: "raccourcis clavier ctrl k esc flèches zoom selection escape undo annuler ctrl z" },
+  { id: "synthese",     num: "6",  title: "Vue Synthèse",                     keywords: "synthèse kpi indicateurs jalons retard risque alertes avancement domaine collapsible ouvrir fermer sous-projets lots chips statuts" },
+  { id: "ressources",   num: "7",  title: "Vue Ressources",                   keywords: "ressources membres responsables ajouter modifier supprimer attribution phases planning email initiales couleur picker existant" },
+  { id: "parametres",   num: "8",  title: "Paramètres",                       keywords: "paramètres général cadence types phases jalons statuts membres droits apparence logo calendrier fermetures jours fériés" },
+  { id: "logo",         num: "9",  title: "Logo & Apparence",                 keywords: "logo apparence navbar png svg favicon changer enregistrer réinitialiser" },
+  { id: "pdf",          num: "10", title: "Export PDF A3",                    keywords: "pdf export a3 imprimer impression format paysage capture download télécharger largeur adaptative" },
+  { id: "calendrier",   num: "11", title: "Fermetures & Jours fériés",        keywords: "fermetures jours fériés calendrier congés été hiver gel gel-code période custom bande colorée affichage toggle" },
+  { id: "historique",   num: "12", title: "Historique & Surveillance connexions", keywords: "historique activité connexions surveillance sécurité alerte ip géolocalisation pays france email resend log" },
 ];
 
 export default function AidePage() {
@@ -616,36 +618,95 @@ export default function AidePage() {
 
       {show("logo") && show("pdf") && <hr style={S.divider} />}
 
-      {/* ── 10. Export PDF ── */}
+      {/* ── 10. Export PDF / PNG ── */}
       {show("pdf") && (
         <section style={S.section} id="pdf">
-          <h2 style={S.h2}><span style={S.pill}>10</span> Export PDF A3</h2>
+          <h2 style={S.h2}><span style={S.pill}>10</span> Export PDF A3 &amp; Image PNG</h2>
           <dl style={S.dl}>
             <div>
-              <dt style={S.dt}>Lancer l&apos;export</dt>
-              <dd style={S.dd}>Cliquez sur <strong>PDF A3</strong> dans la barre d&apos;outils. Une fenêtre d&apos;impression s&apos;ouvre avec un aperçu du Gantt. Cliquez sur <strong>Imprimer / PDF</strong> pour enregistrer ou imprimer.</dd>
+              <dt style={S.dt}>Export PDF A3 — pour impression</dt>
+              <dd style={S.dd}>Cliquez sur <strong>PDF A3</strong> dans la barre d&apos;outils. Une fenêtre d&apos;impression s&apos;ouvre avec un aperçu du Gantt. Cliquez sur <strong>Imprimer / PDF</strong> pour enregistrer. Format A3 paysage (420 × 297 mm), résolution 1,5×.</dd>
             </div>
             <div>
-              <dt style={S.dt}>Format du document</dt>
-              <dd style={S.dd}>PDF A3 paysage (420 × 297 mm). La capture inclut l&apos;intégralité du Gantt affiché : panneau latéral + timeline, sur toute la hauteur et la largeur du contenu.</dd>
+              <dt style={S.dt}>Export PNG — pour PowerPoint et présentations</dt>
+              <dd style={S.dd}>Cliquez sur <strong>PNG</strong> dans la barre d&apos;outils. L&apos;image est capturée en haute résolution (3×) et téléchargée directement sans fenêtre popup. Idéale pour être collée dans PowerPoint, Keynote ou tout outil de présentation : la qualité est nettement supérieure à celle du PDF importé.</dd>
             </div>
             <div>
               <dt style={S.dt}>Conseils pour un meilleur résultat</dt>
               <dd style={S.dd}>
-                — Sélectionnez le zoom <strong>12m</strong> pour avoir l&apos;année complète sur une page.<br />
+                — Sélectionnez le zoom <strong>12m</strong> pour avoir l&apos;année complète sur une seule capture.<br />
                 — Utilisez le filtre de dates pour restreindre la période si le planning est très long.<br />
                 — Utilisez le bouton <strong>Projets</strong> pour masquer les lots non pertinents.<br />
                 — Attendez que le Gantt soit entièrement chargé avant de lancer l&apos;export.
               </dd>
             </div>
           </dl>
-          <Tip>Dans la boîte d&apos;impression du navigateur, sélectionnez « Format A3 paysage », réglez les marges à minimum et décochez « En-têtes et pieds de page » pour un rendu optimal.</Tip>
+          <Tip>Pour PowerPoint, préférez le bouton <strong>PNG</strong> : le fichier se télécharge directement et peut être inséré en tant qu&apos;image haute définition dans votre diapositive.</Tip>
+        </section>
+      )}
+
+      {show("pdf") && show("calendrier") && <hr style={S.divider} />}
+
+      {/* ── 11. Fermetures & Jours fériés ── */}
+      {show("calendrier") && (
+        <section style={S.section} id="calendrier">
+          <h2 style={S.h2}><span style={S.pill}>11</span> Fermetures &amp; Jours fériés</h2>
+          <dl style={S.dl}>
+            <div>
+              <dt style={S.dt}>Accéder au calendrier</dt>
+              <dd style={S.dd}>Allez dans <strong>Paramètres → onglet Fermetures / Jours fériés</strong>. Vous pouvez configurer ici les périodes de fermeture de votre entreprise ainsi que les jours fériés à afficher sur le Gantt.</dd>
+            </div>
+            <div>
+              <dt style={S.dt}>Deux types de périodes</dt>
+              <dd style={S.dd}>
+                — <strong>Jours fériés</strong> (type <em>holiday</em>) : jours légaux ou conventionnels. Affichés avec une teinte colorée sur le Gantt.<br />
+                — <strong>Fermetures / Gel de production</strong> (type <em>custom</em>) : congés d&apos;été, gel de fin d&apos;année, maintenance, etc. Configurables librement avec un label, une plage de dates et une couleur.
+              </dd>
+            </div>
+            <div>
+              <dt style={S.dt}>Afficher ou masquer dans le Gantt</dt>
+              <dd style={S.dd}>Dans la barre d&apos;outils, cliquez sur <strong>Affichage</strong> puis activez / désactivez les cases <strong>Jours fériés</strong> et <strong>Fermetures / Gel</strong>. Les bandes colorées disparaissent ou réapparaissent instantanément.</dd>
+            </div>
+            <div>
+              <dt style={S.dt}>Activer / désactiver une période</dt>
+              <dd style={S.dd}>Dans l&apos;onglet Paramètres, chaque période possède un interrupteur. Désactiver une période la retire de l&apos;affichage sans la supprimer.</dd>
+            </div>
+          </dl>
+          <Tip>Les bandes de fermeture sont visibles à l&apos;export PDF et PNG : pensez à les afficher si votre planning doit illustrer les contraintes calendaires à vos interlocuteurs.</Tip>
+        </section>
+      )}
+
+      {show("calendrier") && show("historique") && <hr style={S.divider} />}
+
+      {/* ── 12. Historique & Surveillance connexions ── */}
+      {show("historique") && (
+        <section style={S.section} id="historique">
+          <h2 style={S.h2}><span style={S.pill}>12</span> Historique &amp; Surveillance connexions</h2>
+          <dl style={S.dl}>
+            <div>
+              <dt style={S.dt}>Journal d&apos;activité</dt>
+              <dd style={S.dd}>Accédez à <strong>Historique</strong> depuis le rail de navigation. L&apos;onglet <strong>Activité</strong> liste les 200 dernières actions réalisées sur le planning (modifications de phases, jalons, membres, paramètres) avec la date, l&apos;auteur et la description de l&apos;action.</dd>
+            </div>
+            <div>
+              <dt style={S.dt}>Surveillance des connexions</dt>
+              <dd style={S.dd}>L&apos;onglet <strong>Connexions</strong> affiche l&apos;historique des connexions à l&apos;application : email, adresse IP, pays de connexion (avec drapeau), ville et type de navigateur. Chaque entrée est horodatée.</dd>
+            </div>
+            <div>
+              <dt style={S.dt}>Alertes de sécurité</dt>
+              <dd style={S.dd}>Toute connexion détectée depuis un pays autre que la France déclenche automatiquement un email d&apos;alerte à l&apos;administrateur (via Resend). Ces connexions sont signalées par un badge <strong>⚠ Alerte</strong> dans la colonne Pays du tableau.</dd>
+            </div>
+            <div>
+              <dt style={S.dt}>Géolocalisation des connexions</dt>
+              <dd style={S.dd}>La localisation (pays, ville) est déterminée à partir de l&apos;adresse IP via le service ip-api.com. Si la géolocalisation échoue (IP locale, VPN, erreur réseau), la ligne s&apos;affiche sans localisation.</dd>
+            </div>
+          </dl>
+          <Tip>En cas de connexion suspecte depuis un pays inattendu, vérifiez l&apos;historique et changez le mot de passe du compte concerné. Les alertes sont envoyées à l&apos;adresse email configurée dans votre compte Resend.</Tip>
         </section>
       )}
 
       {/* Footer */}
       <div style={{ marginTop: 48, paddingTop: 20, borderTop: "1px solid var(--klint-line, #E6E8EE)", fontSize: 12, color: "#9CA3AF" }}>
-        Klint Planning v1.0 — Jalons 0–9 · Klint Consulting © 2026
+        Klint Planning v1.0 — Jalons 0–11 · Klint Consulting © 2026
       </div>
     </div>
   );
