@@ -59,7 +59,7 @@ interface EditPanelProps {
 }
 
 export function EditPanel({ planningId, data }: EditPanelProps) {
-  const { editTarget, closeEdit, pushUndo } = useGanttStore();
+  const { editTarget, closeEdit, pushUndo, openEdit } = useGanttStore();
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const patchPhase = useOptimisticPhase();
@@ -70,6 +70,9 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
   const [assigneeSearch, setAssigneeSearch] = useState("");
   const assigneeWrapperRef = useRef<HTMLDivElement>(null);
+  // Refs pour validation croisée dates début/fin
+  const startInputRef = useRef<HTMLInputElement>(null);
+  const endInputRef   = useRef<HTMLInputElement>(null);
 
   // Create mode form state
   const [createName, setCreateName] = useState("");
@@ -225,6 +228,7 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
               key={phase.id + "-label"}
               defaultValue={phase.label ?? PHASE_TYPE_LABELS[phase.type] ?? phase.type}
               placeholder="Libellé de la phase…"
+              autoFocus
               onBlur={(e) => {
                 const val = e.target.value.trim() || null;
                 const prev = phase.label ?? null;
@@ -235,20 +239,29 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
             />
           </div>
 
-          {/* Début / Fin */}
+          {/* Début / Fin — validation croisée : bloque si début > fin */}
           <div className={styles.fieldRow}>
             <span className={styles.fieldLabel}>Début</span>
             <input
+              ref={startInputRef}
               key={phase.id + "-start"}
               type="date"
               className={styles.dateInput}
               defaultValue={phase.startDate}
               onBlur={(e) => {
+                const newStart = e.target.value;
+                const currentEnd = endInputRef.current?.value ?? phase.endDate;
+                if (!newStart) return;
+                if (newStart > currentEnd) {
+                  setCreateError("La date de début doit être avant la date de fin.");
+                  return;
+                }
+                setCreateError(null);
                 const prevStart = phase.startDate;
                 const prevEnd   = phase.endDate;
                 save(() => updatePhaseDates({
                   phaseId: phase.id, planningId,
-                  startDate: e.target.value, endDate: phase.endDate,
+                  startDate: newStart, endDate: currentEnd,
                 }));
                 pushUndo({ type: "phase-dates", phaseId: phase.id, planningId, prevStart, prevEnd });
               }}
@@ -257,21 +270,33 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
           <div className={styles.fieldRow}>
             <span className={styles.fieldLabel}>Fin</span>
             <input
+              ref={endInputRef}
               key={phase.id + "-end"}
               type="date"
               className={styles.dateInput}
               defaultValue={phase.endDate}
               onBlur={(e) => {
+                const newEnd = e.target.value;
+                const currentStart = startInputRef.current?.value ?? phase.startDate;
+                if (!newEnd) return;
+                if (currentStart > newEnd) {
+                  setCreateError("La date de début doit être avant la date de fin.");
+                  return;
+                }
+                setCreateError(null);
                 const prevStart = phase.startDate;
                 const prevEnd   = phase.endDate;
                 save(() => updatePhaseDates({
                   phaseId: phase.id, planningId,
-                  startDate: phase.startDate, endDate: e.target.value,
+                  startDate: currentStart, endDate: newEnd,
                 }));
                 pushUndo({ type: "phase-dates", phaseId: phase.id, planningId, prevStart, prevEnd });
               }}
             />
           </div>
+          {createError && (
+            <p style={{ color: "#DC2626", fontSize: 12, margin: "4px 0 0", padding: "0 4px" }}>{createError}</p>
+          )}
 
           {/* Statut */}
           <div className={styles.fieldRow}>
@@ -708,6 +733,21 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
             }}
           >
             <Icon name="trash" size={14} />
+          </button>
+          {/* Créer rapidement une phase ou un jalon rattaché à ce lot */}
+          <button
+            className={styles.createSecondaryBtn}
+            title="Créer une phase dans ce projet"
+            onClick={() => openEdit({ kind: "create-phase", lotId })}
+          >
+            ▬ Phase
+          </button>
+          <button
+            className={styles.createSecondaryBtn}
+            title="Créer un jalon dans ce projet"
+            onClick={() => openEdit({ kind: "create-milestone", lotId })}
+          >
+            ◆ Jalon
           </button>
           <Button variant="ghost" size="sm" onClick={closeEdit}>Annuler</Button>
           <button

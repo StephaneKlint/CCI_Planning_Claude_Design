@@ -70,7 +70,7 @@ export function TimelineBody({
   trackByPhaseId = {},
   rowH: singleRowH = 44,
 }: TimelineBodyProps) {
-  const { togglePhaseSelection, selectedPhaseIds, openEdit } = useGanttStore();
+  const { togglePhaseSelection, selectedPhaseIds, openEdit, editTarget } = useGanttStore();
   const domainById = Object.fromEntries(domains.map((d) => [d.id, d]));
   const lotById = Object.fromEntries(lots.map((l) => [l.id, l]));
   const statusByCode = Object.fromEntries(statuses.map((s) => [s.code, s]));
@@ -275,6 +275,7 @@ export function TimelineBody({
           }
 
           const isSelected = selectedPhaseIds.has(phase.id);
+          const isEditing = editTarget?.kind === "phase" && editTarget.id === phase.id;
           // Dim non-selected when a selection is active
           const dimmed = selectedPhaseIds.size > 0 && !isSelected;
 
@@ -293,6 +294,7 @@ export function TimelineBody({
               fg={fg}
               hasNote={!!phase.note}
               selected={isSelected}
+              editing={isEditing}
               dimmed={dimmed}
               onClick={(e) => togglePhaseSelection(phase.id, e.metaKey || e.ctrlKey)}
             />

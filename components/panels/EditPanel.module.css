@@ -450,6 +450,29 @@
   text-align: center;
 }
 
+/* ── Boutons création rapide Phase / Jalon depuis modale lot ── */
+.createSecondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1.5px solid var(--klint-line, #E6E8EE);
+  background: var(--klint-surface, #fff);
+  color: var(--klint-text, #1E293B);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-display, system-ui);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 120ms, border-color 120ms;
+}
+.createSecondaryBtn:hover {
+  background: var(--klint-paper, #FAFBFC);
+  border-color: #C7D0E0;
+}
+
 /* Kept for backwards compatibility if referenced anywhere */
 .assignees { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .memberChip { display: flex; align-items: center; gap: 5px; padding: 3px 10px 3px 6px; border-radius: 999px; border: none; cursor: pointer; font-size: 11px; font-weight: 600; font-family: var(--font-display, system-ui); color: #ffffff; }

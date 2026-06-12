@@ -22,6 +22,8 @@ interface PhasePillProps {
   fg: string;
   hasNote?: boolean;
   selected?: boolean;
+  /** true quand cette phase est ouverte dans l'EditPanel */
+  editing?: boolean;
   dimmed?: boolean;
   onClick?: (e: React.MouseEvent) => void;
   style?: "solid" | "tint" | "outline";
@@ -30,7 +32,7 @@ interface PhasePillProps {
 export function PhasePill({
   left, width, top, height = 26,
   label, startDate, endDate, progress = 0, bg, fg,
-  hasNote = false, selected = false, dimmed = false,
+  hasNote = false, selected = false, editing = false, dimmed = false,
   onClick, style: pillStyle = "solid",
 }: PhasePillProps) {
   if (width < 2) return null;
@@ -66,10 +68,12 @@ export function PhasePill({
     letterSpacing: "0.01em",
     userSelect: "none",
     transition: "filter 140ms, transform 140ms, opacity 120ms",
-    zIndex: selected ? 3 : 2,
+    zIndex: editing ? 4 : selected ? 3 : 2,
     opacity: dimmed ? 0.35 : 1,
-    outline: selected ? "2px solid var(--klint-navy, #001036)" : undefined,
-    outlineOffset: selected ? "1px" : undefined,
+    outline: editing
+      ? "2px solid #F59E0B"
+      : selected ? "2px solid var(--klint-navy, #001036)" : undefined,
+    outlineOffset: (editing || selected) ? "1px" : undefined,
     ...(pillStyle === "solid"
       ? { background: bg, color: fg }
       : pillStyle === "tint"

@@ -23,6 +23,8 @@ interface ToolbarProps {
   onSearchClick?: () => void;
   onExportPdf?: () => void;
   exportPdfPending?: boolean;
+  onExportPng?: () => void;
+  exportPngPending?: boolean;
   onExportJson?: () => void;
   onProjectFilter?: () => void;
   projectFilterActive?: boolean;
@@ -70,6 +72,8 @@ export function Toolbar({
   onSearchClick: _onSearchClick,
   onExportPdf,
   exportPdfPending = false,
+  onExportPng,
+  exportPngPending = false,
   onExportJson,
   onProjectFilter,
   projectFilterActive = false,
@@ -300,12 +304,26 @@ export function Toolbar({
           </button>
         )}
 
+        {/* Export PNG haute résolution (PowerPoint) */}
+        {onExportPng && (
+          <button
+            className={styles.btn}
+            onClick={onExportPng}
+            disabled={exportPngPending || exportPdfPending}
+            aria-label="Exporter en image PNG haute résolution"
+            title="Image PNG 3× — idéale pour PowerPoint"
+          >
+            <Icon name="download" size={14} />
+            <span>{exportPngPending ? "Capture…" : "PNG"}</span>
+          </button>
+        )}
+
         {/* Export PDF A3 */}
         {onExportPdf && (
           <button
             className={`${styles.btn} ${styles.exportBtn}`}
             onClick={onExportPdf}
-            disabled={exportPdfPending}
+            disabled={exportPdfPending || exportPngPending}
             aria-label="Exporter en PDF A3"
             title="Aperçu et impression A3 paysage"
           >

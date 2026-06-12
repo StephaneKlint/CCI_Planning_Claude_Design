@@ -37,6 +37,7 @@ interface GanttViewProps extends GanttProps {
 export function GanttView({ initialData, demoMemberId, ...props }: GanttViewProps) {
   const ganttRef = useRef<HTMLDivElement>(null);
   const [exportPending, setExportPending] = useState(false);
+  const [exportPngPending, setExportPngPending] = useState(false);
 
   const {
     zoom, setZoom,
@@ -136,92 +137,90 @@ export function GanttView({ initialData, demoMemberId, ...props }: GanttViewProp
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [handleUndo]);
 
+  // ── Capture commune html2canvas ─────────────────────────────────────────────
+  const captureGantt = async (scale: number) => {
+    const html2canvas = (await import("html2canvas")).default;
+    const outerEl = ganttRef.current!;
+
+    const bodyEl = outerEl.querySelector<HTMLElement>("[data-gantt-body]");
+    const timelineW = bodyEl?.scrollWidth  ?? 1200;
+    const timelineH = bodyEl?.scrollHeight ?? 600;
+    const SIDE_W   = 340;
+    const HEADER_H = 52;
+    const exportW  = timelineW + SIDE_W;
+    const exportH  = timelineH + HEADER_H;
+
+    const canvas = await html2canvas(outerEl, {
+      scale,
+      useCORS: true,
+      logging: false,
+      backgroundColor: "#ffffff",
+      scrollX: 0,
+      scrollY: 0,
+      width: exportW,
+      height: exportH,
+      windowWidth: exportW,
+      windowHeight: exportH,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      onclone: (_clonedDoc: Document, clonedOuter: any) => {
+        const el = clonedOuter as HTMLElement;
+        el.style.cssText = [
+          `position: relative !important`,
+          `width: ${exportW}px !important`,
+          `height: ${exportH}px !important`,
+          `overflow: visible !important`,
+          `padding: 0 !important`,
+        ].join(";");
+
+        const sideEl      = el.querySelector<HTMLElement>("[data-gantt-side]");
+        const sideRowsEl  = el.querySelector<HTMLElement>("[data-gantt-side-rows]");
+        const timelineEl  = el.querySelector<HTMLElement>("[data-gantt-timeline]");
+        const bodyCloneEl = el.querySelector<HTMLElement>("[data-gantt-body]");
+        const ganttFlexRow = sideEl?.parentElement ?? null;
+
+        el.querySelectorAll<HTMLElement>("*").forEach((child) => {
+          if (child === ganttFlexRow) return;
+          child.style.overflow  = "visible";
+          child.style.overflowX = "visible";
+          child.style.overflowY = "visible";
+          child.style.maxHeight = "none";
+          child.style.maxWidth  = "none";
+        });
+
+        if (sideEl) {
+          sideEl.style.height    = `${exportH}px`;
+          sideEl.style.minHeight = `${exportH}px`;
+          sideEl.style.position  = "relative";
+          sideEl.style.zIndex    = "10";
+        }
+        if (sideRowsEl) {
+          sideRowsEl.style.height    = `${timelineH}px`;
+          sideRowsEl.style.minHeight = `${timelineH}px`;
+          sideRowsEl.style.flex      = "none";
+        }
+        if (timelineEl) {
+          timelineEl.style.height    = `${exportH}px`;
+          timelineEl.style.minHeight = `${exportH}px`;
+          timelineEl.style.position  = "relative";
+          timelineEl.style.zIndex    = "1";
+        }
+        if (bodyCloneEl) {
+          bodyCloneEl.style.height    = `${timelineH}px`;
+          bodyCloneEl.style.minHeight = `${timelineH}px`;
+          bodyCloneEl.style.flex      = "none";
+        }
+      },
+    });
+
+    return { canvas, exportW, exportH };
+  };
+
   // ── PDF export ──────────────────────────────────────────────────────────────
   const handleExportPdf = async () => {
-    if (!ganttRef.current || exportPending) return;
+    if (!ganttRef.current || exportPending || exportPngPending) return;
     setExportPending(true);
     try {
-      const html2canvas = (await import("html2canvas")).default;
-      const outerEl = ganttRef.current;
-
-      // Mesure les dimensions réelles du contenu via l'élément bodyScroll
-      const bodyEl = outerEl.querySelector<HTMLElement>("[data-gantt-body]");
-      const timelineW = bodyEl?.scrollWidth  ?? 1200;
-      const timelineH = bodyEl?.scrollHeight ?? 600;
-      const SIDE_W   = 340;
-      const HEADER_H = 52;
-      const exportW  = timelineW + SIDE_W;
-      const exportH  = timelineH + HEADER_H;
-
-      const canvas = await html2canvas(outerEl, {
-        scale: 1.5,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-        scrollX: 0,
-        scrollY: 0,
-        width: exportW,
-        height: exportH,
-        windowWidth: exportW,
-        windowHeight: exportH,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        onclone: (_clonedDoc: Document, clonedOuter: any) => {
-          const el = clonedOuter as HTMLElement;
-
-          // Agrandit le conteneur extérieur à la taille totale du contenu
-          el.style.cssText = [
-            `position: relative !important`,
-            `width: ${exportW}px !important`,
-            `height: ${exportH}px !important`,
-            `overflow: visible !important`,
-            `padding: 0 !important`,
-          ].join(";");
-
-          // Trouve le flex row .gantt (parent direct de sideScroll) — doit garder overflow:hidden
-          // pour que le SVG timeline ne saigne pas sur le side panel
-          const sideEl      = el.querySelector<HTMLElement>("[data-gantt-side]");
-          const sideRowsEl  = el.querySelector<HTMLElement>("[data-gantt-side-rows]");
-          const timelineEl  = el.querySelector<HTMLElement>("[data-gantt-timeline]");
-          const bodyCloneEl = el.querySelector<HTMLElement>("[data-gantt-body]");
-          const ganttFlexRow = sideEl?.parentElement ?? null;
-
-          // Supprime les contraintes de débordement dans les enfants,
-          // SAUF sur le flex row .gantt qui clipe le SVG timeline
-          el.querySelectorAll<HTMLElement>("*").forEach((child) => {
-            if (child === ganttFlexRow) return; // préserver overflow:hidden sur ce conteneur
-            child.style.overflow  = "visible";
-            child.style.overflowX = "visible";
-            child.style.overflowY = "visible";
-            child.style.maxHeight = "none";
-            child.style.maxWidth  = "none";
-          });
-
-          // Force les hauteurs des conteneurs flex clés pour le rendu vertical complet
-          if (sideEl) {
-            sideEl.style.height    = `${exportH}px`;
-            sideEl.style.minHeight = `${exportH}px`;
-            sideEl.style.position  = "relative";
-            sideEl.style.zIndex    = "10"; // au-dessus du SVG timeline
-          }
-          if (sideRowsEl) {
-            sideRowsEl.style.height    = `${timelineH}px`;
-            sideRowsEl.style.minHeight = `${timelineH}px`;
-            sideRowsEl.style.flex      = "none";
-          }
-          if (timelineEl) {
-            timelineEl.style.height    = `${exportH}px`;
-            timelineEl.style.minHeight = `${exportH}px`;
-            timelineEl.style.position  = "relative";
-            timelineEl.style.zIndex    = "1";
-          }
-          if (bodyCloneEl) {
-            bodyCloneEl.style.height    = `${timelineH}px`;
-            bodyCloneEl.style.minHeight = `${timelineH}px`;
-            bodyCloneEl.style.flex      = "none";
-          }
-        },
-      });
-
+      const { canvas } = await captureGantt(1.5);
       const imgData = canvas.toDataURL("image/png");
       const planningName = liveData.planning.name;
 
@@ -287,6 +286,27 @@ export function GanttView({ initialData, demoMemberId, ...props }: GanttViewProp
     }
   };
 
+  // ── Export PNG haute résolution (PowerPoint) ────────────────────────────────
+  const handleExportPng = async () => {
+    if (!ganttRef.current || exportPending || exportPngPending) return;
+    setExportPngPending(true);
+    try {
+      const { canvas } = await captureGantt(3);
+      const planningName = liveData.planning.name;
+      // Nom de fichier sécurisé
+      const safeName = planningName.replace(/[^a-zA-Z0-9_\-]/g, "_");
+      const a = document.createElement("a");
+      a.download = `${safeName}_planning.png`;
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    } catch (err) {
+      console.error("Export PNG failed:", err);
+      alert("L'export PNG a échoué. Essayez de réduire le zoom ou la période affichée.");
+    } finally {
+      setExportPngPending(false);
+    }
+  };
+
   // ── Export JSON ─────────────────────────────────────────────────────────────
   const handleExportJson = () => {
     window.location.href = `/api/export/${props.planningId}`;
@@ -304,6 +324,8 @@ export function GanttView({ initialData, demoMemberId, ...props }: GanttViewProp
         onSearchClick={() => setCommandPaletteOpen(true)}
         onExportPdf={handleExportPdf}
         exportPdfPending={exportPending}
+        onExportPng={handleExportPng}
+        exportPngPending={exportPngPending}
         onExportJson={handleExportJson}
         onProjectFilter={() => setProjectFilterOpen(!projectFilterOpen)}
         projectFilterActive={projectFilterOpen || hiddenLotIds.size > 0}

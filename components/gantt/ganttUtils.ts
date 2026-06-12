@@ -70,9 +70,20 @@ export function computeRowOffsets(
   const rows: RowEntry[] = [];
   let y = 0;
   for (const domain of domains) {
-    rows.push({ kind: "domain", id: domain.id, domainCode: domain.code, y, h: domainHeadH });
-    y += domainHeadH;
-    for (const lot of lots.filter((l) => l.domainId === domain.id)) {
+    const domainLots = lots.filter((l) => l.domainId === domain.id);
+    // Cache le header du domaine si TOUS ses lots sont masqués
+    // (domaine sans lot = header toujours visible pour permettre d'en créer)
+    const allHidden =
+      domainLots.length > 0 &&
+      hiddenLotIds != null &&
+      domainLots.every((l) => hiddenLotIds.has(l.id));
+
+    if (!allHidden) {
+      rows.push({ kind: "domain", id: domain.id, domainCode: domain.code, y, h: domainHeadH });
+      y += domainHeadH;
+    }
+
+    for (const lot of domainLots) {
       if (hiddenLotIds?.has(lot.id)) continue;
       const tracks = trackCountByLotId?.[lot.id] ?? 1;
       const h = tracks * rowH;
