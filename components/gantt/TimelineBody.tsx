@@ -295,6 +295,7 @@ export function TimelineBody({
               hasNote={!!phase.note}
               selected={isSelected}
               editing={isEditing}
+              status={phase.status}
               dimmed={dimmed}
               onClick={(e) => togglePhaseSelection(phase.id, e.metaKey || e.ctrlKey)}
             />

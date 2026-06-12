@@ -94,6 +94,11 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
   const [editLotName, setEditLotName] = useState("");
   const [editLotSubtitle, setEditLotSubtitle] = useState("");
   const [editLotDomainId, setEditLotDomainId] = useState("");
+  // Édition inline des dates depuis la modale lot
+  const [editingPhaseDates, setEditingPhaseDates] = useState(false);
+  const [phaseDateDrafts, setPhaseDateDrafts] = useState<Record<string, { start: string; end: string }>>({});
+  const [editingMilestoneDates, setEditingMilestoneDates] = useState(false);
+  const [milestoneDateDrafts, setMilestoneDateDrafts] = useState<Record<string, string>>({});
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -125,6 +130,10 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
     setDomainPresetIdx(0);
     setDomainCode("");
     setDomainName("");
+    setEditingPhaseDates(false);
+    setPhaseDateDrafts({});
+    setEditingMilestoneDates(false);
+    setMilestoneDateDrafts({});
     // Seed lot edit form from current data
     if (editTarget?.kind === "lot" || editTarget?.kind === "edit-lot") {
       const lotId = editTarget.kind === "lot" ? editTarget.id : editTarget.lotId;
@@ -613,6 +622,58 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
       });
     };
 
+    // ── Handlers édition inline des dates depuis la modale lot ─────────────
+    const handleEnterPhaseDates = () => {
+      const drafts: Record<string, { start: string; end: string }> = {};
+      lotPhases.forEach((p) => { drafts[p.id] = { start: p.startDate, end: p.endDate }; });
+      setPhaseDateDrafts(drafts);
+      setEditingPhaseDates(true);
+    };
+
+    const handleSavePhaseDates = () => {
+      startTransition(async () => {
+        try {
+          await Promise.all(
+            lotPhases.map((p) => {
+              const d = phaseDateDrafts[p.id];
+              if (!d) return Promise.resolve();
+              if (d.start > d.end) throw new Error(`Phase "${PHASE_TYPE_LABELS[p.type] ?? p.type}" : début > fin.`);
+              return updatePhaseDates({ phaseId: p.id, planningId: lotPlanningId, startDate: d.start, endDate: d.end });
+            })
+          );
+          setEditingPhaseDates(false);
+          router.refresh();
+        } catch (e) {
+          setCreateError(e instanceof Error ? e.message : "Erreur lors de la sauvegarde des dates.");
+        }
+      });
+    };
+
+    const handleEnterMilestoneDates = () => {
+      const drafts: Record<string, string> = {};
+      lotMilestones.forEach((m) => { drafts[m.id] = m.date; });
+      setMilestoneDateDrafts(drafts);
+      setEditingMilestoneDates(true);
+    };
+
+    const handleSaveMilestoneDates = () => {
+      startTransition(async () => {
+        try {
+          await Promise.all(
+            lotMilestones.map((m) => {
+              const d = milestoneDateDrafts[m.id];
+              if (!d) return Promise.resolve();
+              return updateMilestone({ milestoneId: m.id, planningId: lotPlanningId, date: d });
+            })
+          );
+          setEditingMilestoneDates(false);
+          router.refresh();
+        } catch (e) {
+          setCreateError(e instanceof Error ? e.message : "Erreur lors de la sauvegarde des jalons.");
+        }
+      });
+    };
+
     return (
       <div className={styles.panel} role="dialog" aria-label="Projet">
         <div className={styles.header}>
@@ -673,27 +734,138 @@ export function EditPanel({ planningId, data }: EditPanelProps) {
             <span className={styles.stat}><strong>{lotPhases.length}</strong> phase{lotPhases.length !== 1 ? "s" : ""}</span>
             <span className={styles.stat}><strong>{lotMilestones.length}</strong> jalon{lotMilestones.length !== 1 ? "s" : ""}</span>
           </div>
+
+          {/* ── Phases avec édition inline des dates ── */}
           {lotPhases.length > 0 && (
             <div className={styles.fieldRow}>
-              <span className={styles.fieldLabel}>Phases</span>
+              <div className={styles.fieldLabelRow}>
+                <span className={styles.fieldLabel}>Phases</span>
+                {!editingPhaseDates ? (
+                  <button
+                    className={styles.editDatesBtn}
+                    title="Modifier les dates des phases"
+                    onClick={handleEnterPhaseDates}
+                    type="button"
+                  >
+                    ✎
+                  </button>
+                ) : (
+                  <span className={styles.editDatesBtns}>
+                    <button
+                      className={styles.editDatesSaveBtn}
+                      title="Enregistrer les dates"
+                      onClick={handleSavePhaseDates}
+                      disabled={isPending}
+                      type="button"
+                    >
+                      ✔
+                    </button>
+                    <button
+                      className={styles.editDatesCancelBtn}
+                      title="Annuler"
+                      onClick={() => setEditingPhaseDates(false)}
+                      type="button"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                )}
+              </div>
               <div className={styles.phaseList}>
                 {lotPhases.map((p) => (
                   <div key={p.id} className={styles.phaseListItem}>
                     <span className={styles.phaseTypeBadge}>{PHASE_TYPE_LABELS[p.type] ?? p.type}</span>
-                    <span className={styles.phaseDates}>{p.startDate} → {p.endDate}</span>
+                    {editingPhaseDates ? (
+                      <span className={styles.phaseDateInputsRow}>
+                        <input
+                          type="date"
+                          className={styles.dateInputSmall}
+                          value={phaseDateDrafts[p.id]?.start ?? p.startDate}
+                          onChange={(e) =>
+                            setPhaseDateDrafts((prev) => ({
+                              ...prev,
+                              [p.id]: { ...prev[p.id], start: e.target.value },
+                            }))
+                          }
+                        />
+                        <span className={styles.dateArrow}>→</span>
+                        <input
+                          type="date"
+                          className={styles.dateInputSmall}
+                          value={phaseDateDrafts[p.id]?.end ?? p.endDate}
+                          onChange={(e) =>
+                            setPhaseDateDrafts((prev) => ({
+                              ...prev,
+                              [p.id]: { ...prev[p.id], end: e.target.value },
+                            }))
+                          }
+                        />
+                      </span>
+                    ) : (
+                      <span className={styles.phaseDates}>{p.startDate} → {p.endDate}</span>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
           )}
+
+          {/* ── Jalons avec édition inline de la date ── */}
           {lotMilestones.length > 0 && (
             <div className={styles.fieldRow}>
-              <span className={styles.fieldLabel}>Jalons</span>
+              <div className={styles.fieldLabelRow}>
+                <span className={styles.fieldLabel}>Jalons</span>
+                {!editingMilestoneDates ? (
+                  <button
+                    className={styles.editDatesBtn}
+                    title="Modifier les dates des jalons"
+                    onClick={handleEnterMilestoneDates}
+                    type="button"
+                  >
+                    ✎
+                  </button>
+                ) : (
+                  <span className={styles.editDatesBtns}>
+                    <button
+                      className={styles.editDatesSaveBtn}
+                      title="Enregistrer les dates"
+                      onClick={handleSaveMilestoneDates}
+                      disabled={isPending}
+                      type="button"
+                    >
+                      ✔
+                    </button>
+                    <button
+                      className={styles.editDatesCancelBtn}
+                      title="Annuler"
+                      onClick={() => setEditingMilestoneDates(false)}
+                      type="button"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                )}
+              </div>
               <div className={styles.phaseList}>
                 {lotMilestones.map((m) => (
                   <div key={m.id} className={styles.phaseListItem}>
                     <span className={styles.phaseTypeBadge}>{m.type}</span>
-                    <span className={styles.phaseDates}>{m.label} — {m.date}</span>
+                    {editingMilestoneDates ? (
+                      <span className={styles.phaseDateInputsRow}>
+                        <span className={styles.phaseDates} style={{ flexShrink: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.label}</span>
+                        <span className={styles.dateArrow}>—</span>
+                        <input
+                          type="date"
+                          className={styles.dateInputSmall}
+                          value={milestoneDateDrafts[m.id] ?? m.date}
+                          onChange={(e) =>
+                            setMilestoneDateDrafts((prev) => ({ ...prev, [m.id]: e.target.value }))
+                          }
+                        />
+                      </span>
+                    ) : (
+                      <span className={styles.phaseDates}>{m.label} — {m.date}</span>
+                    )}
                   </div>
                 ))}
               </div>

@@ -25,6 +25,8 @@ interface PhasePillProps {
   /** true quand cette phase est ouverte dans l'EditPanel */
   editing?: boolean;
   dimmed?: boolean;
+  /** statut métier de la phase — utilisé pour la distinction visuelle terminée/non-commencée */
+  status?: string | null;
   onClick?: (e: React.MouseEvent) => void;
   style?: "solid" | "tint" | "outline";
 }
@@ -33,12 +35,17 @@ export function PhasePill({
   left, width, top, height = 26,
   label, startDate, endDate, progress = 0, bg, fg,
   hasNote = false, selected = false, editing = false, dimmed = false,
-  onClick, style: pillStyle = "solid",
+  status, onClick, style: pillStyle = "solid",
 }: PhasePillProps) {
   if (width < 2) return null;
 
+  // ── Distinction visuelle terminée / non-commencée ───────────────────────────
+  // Option B : dashed pour "planned à 0%", stries pour "done / 100%"
+  const isDone    = pillStyle === "solid" && (status === "done" || progress >= 100);
+  const isPlanned = pillStyle === "solid" && status === "planned" && progress === 0 && !isDone;
+
   const showLabel = width >= 18 && label;
-  const showProgress = progress > 0 && progress < 100 && width >= 110;
+  const showProgress = !isDone && !isPlanned && progress > 0 && progress < 100 && width >= 110;
 
   // Shorten label for narrow pills
   const ABBREVS: Record<string, string> = {
@@ -58,7 +65,7 @@ export function PhasePill({
     left, top, width, height,
     borderRadius: 999,
     cursor: "pointer",
-    overflow: "hidden",
+    overflow: isPlanned ? "visible" : "hidden",
     pointerEvents: "auto",
     display: "flex",
     alignItems: "center",
@@ -75,7 +82,19 @@ export function PhasePill({
       : selected ? "2px solid var(--klint-navy, #001036)" : undefined,
     outlineOffset: (editing || selected) ? "1px" : undefined,
     ...(pillStyle === "solid"
-      ? { background: bg, color: fg }
+      ? isDone
+        ? {
+            background: bg,
+            backgroundImage: `repeating-linear-gradient(-55deg, transparent 0px, transparent 6px, rgba(255,255,255,0.22) 6px, rgba(255,255,255,0.22) 8px)`,
+            color: fg,
+          }
+        : isPlanned
+        ? {
+            background: "transparent",
+            border: `1.5px dashed ${bg}`,
+            color: bg,
+          }
+        : { background: bg, color: fg }
       : pillStyle === "tint"
       ? { background: bg + "33", color: bg, border: `1px solid ${bg}55` }
       : { background: "white", color: bg, border: `1.5px solid ${bg}` }),
@@ -118,7 +137,7 @@ export function PhasePill({
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           maxWidth: "100%",
         }}>
-          {displayLabel(label)}
+          {isDone ? `✓ ${displayLabel(label)}` : displayLabel(label)}
           {showProgress && width >= 110 && ` — ${progress}%`}
         </span>
       )}

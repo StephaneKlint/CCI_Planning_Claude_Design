@@ -473,6 +473,103 @@
   border-color: #C7D0E0;
 }
 
+/* ── Édition inline dates phases/jalons depuis modale lot ── */
+.fieldLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.fieldLabelRow .fieldLabel {
+  margin-bottom: 0;
+}
+.editDatesBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid var(--klint-line, #E6E8EE);
+  background: transparent;
+  color: #94A3B8;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  transition: background 120ms, color 120ms, border-color 120ms;
+  flex-shrink: 0;
+}
+.editDatesBtn:hover {
+  background: var(--klint-paper, #FAFBFC);
+  color: var(--klint-navy, #001036);
+  border-color: #C7D0E0;
+}
+.editDatesBtns {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.editDatesSaveBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: none;
+  background: #DCFCE7;
+  color: #16A34A;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  transition: background 120ms;
+}
+.editDatesSaveBtn:hover:not(:disabled) { background: #BBF7D0; }
+.editDatesSaveBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+.editDatesCancelBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: none;
+  background: #FEE2E2;
+  color: #DC2626;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+  transition: background 120ms;
+}
+.editDatesCancelBtn:hover { background: #FECACA; }
+.phaseDateInputsRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.dateInputSmall {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 4px;
+  height: 26px;
+  border-radius: 4px;
+  border: 1px solid var(--klint-line, #E6E8EE);
+  background: var(--klint-paper, #FAFBFC);
+  color: var(--klint-text, #1E293B);
+  font-size: 11px;
+  font-family: var(--font-display, system-ui);
+  outline: none;
+  transition: border-color 120ms;
+}
+.dateInputSmall:focus { border-color: var(--klint-navy, #001036); }
+.dateArrow {
+  color: #94A3B8;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
 /* Kept for backwards compatibility if referenced anywhere */
 .assignees { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .memberChip { display: flex; align-items: center; gap: 5px; padding: 3px 10px 3px 6px; border-radius: 999px; border: none; cursor: pointer; font-size: 11px; font-weight: 600; font-family: var(--font-display, system-ui); color: #ffffff; }
