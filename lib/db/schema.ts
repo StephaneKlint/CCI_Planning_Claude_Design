@@ -338,6 +338,22 @@ export const closurePeriods = pgTable(
   (t) => [index("cp_by_planning").on(t.planningId)]
 );
 
+// ---- Liens de partage lecture seule --------------------------------------
+
+export const shareTokens = pgTable(
+  "share_tokens",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    planningId: uuid("planning_id")
+      .notNull()
+      .references(() => plannings.id, { onDelete: "cascade" }),
+    token: varchar("token", { length: 64 }).notNull().unique(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+  },
+  (t) => [index("share_tokens_by_planning").on(t.planningId)]
+);
+
 // ---- Journalisation des connexions --------------------------------------
 
 export const connectionLogs = pgTable(

@@ -26,6 +26,7 @@ interface ToolbarProps {
   onExportPng?: () => void;
   exportPngPending?: boolean;
   onExportJson?: () => void;
+  onShare?: () => void;
   onProjectFilter?: () => void;
   projectFilterActive?: boolean;
   /** @deprecated Use colorMode instead */
@@ -75,6 +76,7 @@ export function Toolbar({
   onExportPng,
   exportPngPending = false,
   onExportJson,
+  onShare,
   onProjectFilter,
   projectFilterActive = false,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -290,6 +292,19 @@ export function Toolbar({
           <Icon name="sort" size={14} />
           <span>Projets</span>
         </button>
+
+        {/* Partager — lien lecture seule */}
+        {onShare && (
+          <button
+            className={styles.btn}
+            onClick={onShare}
+            aria-label="Partager le planning"
+            title="Partager en lecture seule"
+          >
+            <Icon name="share" size={14} />
+            <span>Partager</span>
+          </button>
+        )}
 
         {/* Export JSON */}
         {onExportJson && (

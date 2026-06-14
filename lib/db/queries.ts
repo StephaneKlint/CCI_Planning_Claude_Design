@@ -3,7 +3,7 @@ import {
   plannings, domains, lots, phases, milestones,
   planningMembers, users, phaseAssignees,
   phaseTypes, milestoneTypes, statuses, planningSettings,
-  activityLog, closurePeriods, connectionLogs,
+  activityLog, closurePeriods, connectionLogs, shareTokens,
 } from "./schema";
 import { eq, asc, desc, inArray, and } from "drizzle-orm";
 
@@ -241,4 +241,17 @@ export async function listUsersNotInPlanning(planningId: string): Promise<Existi
     }
   }
   return result;
+}
+
+export async function getGanttDataByToken(token: string): Promise<GanttData | null> {
+  const [shareToken] = await db
+    .select({ planningId: shareTokens.planningId, expiresAt: shareTokens.expiresAt })
+    .from(shareTokens)
+    .where(eq(shareTokens.token, token))
+    .limit(1);
+
+  if (!shareToken) return null;
+  if (shareToken.expiresAt && shareToken.expiresAt < new Date()) return null;
+
+  return getGanttData(shareToken.planningId);
 }

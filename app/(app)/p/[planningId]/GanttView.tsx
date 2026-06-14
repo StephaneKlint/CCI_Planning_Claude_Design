@@ -23,6 +23,7 @@ import {
   restorePhase, restoreMilestone, restoreLot,
 } from "@/lib/actions/planning";
 import { restoreMember } from "@/lib/actions/members";
+import { getOrCreateShareToken, revokeShareToken } from "@/lib/actions/share";
 import type { GanttProps } from "@/components/gantt/types";
 import type { GanttData } from "@/lib/db/queries";
 import type { UndoEntry } from "@/store/ganttStore";
@@ -38,6 +39,11 @@ export function GanttView({ initialData, demoMemberId, ...props }: GanttViewProp
   const ganttRef = useRef<HTMLDivElement>(null);
   const [exportPending, setExportPending] = useState(false);
   const [exportPngPending, setExportPngPending] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareRevoking, setShareRevoking] = useState(false);
 
   const {
     zoom, setZoom,
@@ -312,6 +318,40 @@ export function GanttView({ initialData, demoMemberId, ...props }: GanttViewProp
     window.location.href = `/api/export/${props.planningId}`;
   };
 
+  // ── Share link ──────────────────────────────────────────────────────────────
+  const handleOpenShare = async () => {
+    setShareOpen(true);
+    if (shareToken) return;
+    setShareLoading(true);
+    try {
+      const { token } = await getOrCreateShareToken(props.planningId);
+      setShareToken(token);
+    } catch (err) {
+      console.error("Share token error:", err);
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
+  const handleCopyShare = async () => {
+    if (!shareToken) return;
+    await navigator.clipboard.writeText(`${window.location.origin}/share/${shareToken}`);
+    setShareCopied(true);
+    setTimeout(() => setShareCopied(false), 2000);
+  };
+
+  const handleRevokeShare = async () => {
+    setShareRevoking(true);
+    try {
+      await revokeShareToken(props.planningId);
+      setShareToken(null);
+    } catch (err) {
+      console.error("Revoke error:", err);
+    } finally {
+      setShareRevoking(false);
+    }
+  };
+
   return (
     <div className={styles.view}>
       <Toolbar
@@ -327,6 +367,7 @@ export function GanttView({ initialData, demoMemberId, ...props }: GanttViewProp
         onExportPng={handleExportPng}
         exportPngPending={exportPngPending}
         onExportJson={handleExportJson}
+        onShare={handleOpenShare}
         onProjectFilter={() => setProjectFilterOpen(!projectFilterOpen)}
         projectFilterActive={projectFilterOpen || hiddenLotIds.size > 0}
         presenceStack={<PresenceStack members={activeMembers} />}
@@ -387,6 +428,49 @@ export function GanttView({ initialData, demoMemberId, ...props }: GanttViewProp
       <EditPanel planningId={props.planningId} data={liveData} />
       <BulkBar planningId={props.planningId} />
       <CommandPalette data={liveData} planningId={props.planningId} />
+
+      {shareOpen && (
+        <div className={styles.shareOverlay} onClick={() => setShareOpen(false)}>
+          <div className={styles.shareModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.shareModalHeader}>
+              <span className={styles.shareModalTitle}>Lien de partage</span>
+              <button className={styles.shareClose} onClick={() => setShareOpen(false)}>✕</button>
+            </div>
+            <p className={styles.shareHint}>
+              Ce lien donne acc&egrave;s au planning en lecture seule.
+              Toute personne disposant du lien peut le consulter sans connexion.
+            </p>
+            {shareLoading ? (
+              <p className={styles.shareStatus}>G&eacute;n&eacute;ration en cours&hellip;</p>
+            ) : shareToken ? (
+              <>
+                <div className={styles.shareLinkRow}>
+                  <input
+                    className={styles.shareLinkInput}
+                    readOnly
+                    value={`${typeof window !== "undefined" ? window.location.origin : ""}/share/${shareToken}`}
+                    onFocus={(e) => e.target.select()}
+                  />
+                  <button className={styles.shareCopyBtn} onClick={handleCopyShare}>
+                    {shareCopied ? "✓ Copié !" : "Copier"}
+                  </button>
+                </div>
+                <button
+                  className={styles.shareRevokeBtn}
+                  onClick={handleRevokeShare}
+                  disabled={shareRevoking}
+                >
+                  {shareRevoking ? "Révocation…" : "Révoquer le lien"}
+                </button>
+              </>
+            ) : (
+              <button className={styles.shareGenerateBtn} onClick={handleOpenShare}>
+                Générer un lien
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
